@@ -1,0 +1,64 @@
+name:                wl-bot
+version:             0.1.0.0
+github:              "nutr1t07/wl-bot"
+license:             BSD3
+author:              "Nutr1t07"
+maintainer:          "nutr1t07@outlook.com"
+copyright:           "2019 Nutr1t07"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         A bot used to forward messages between Telegram and QQ.
+
+dependencies:
+- base >= 4.7 && < 5
+- transformers
+- network
+- containers
+- aeson
+- conduit
+- lens
+- scotty
+- text
+- wai-extra
+- data-default
+- wreq
+- http-types
+- bytestring
+- time
+
+library:
+  source-dirs: src
+
+executables:
+  wl-bot-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -static
+    - -O2
+    cc-options: -static
+    ld-options: -static -pthread
+    dependencies:
+    - wl-bot
+
+tests:
+  wl-bot-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - wl-bot
