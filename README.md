@@ -1,6 +1,6 @@
 # wl-bot
 
-This is a program used to link groups between Telegram and QQ, writen in Haskell.
+This is a program used to link groups between Telegram and QQ, written in Haskell.
 
 ## How does it work
 
