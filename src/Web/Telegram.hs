@@ -1,17 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Web.Telegram where
 
-import Type.Telegram.SendMsg
-import Type.CQ.Update
-import Type.Config
-import Data.CQ
+import Type.CQ.Update        (Update, message)
+import Type.Config           (GroupMap)
+import Data.CQ               (transfmCqGrpMsgUpdate, getImgUrls)
 import Network.Wreq
 import Data.Aeson
 import Data.Text
 import Data.Maybe
 import Data.Tuple
 import Data.ByteString.Lazy
-import Utils.Logging
 
 fwdQQtoTg :: String -> Update -> GroupMap -> IO (Maybe (Response ByteString))
 fwdQQtoTg tgbotTk cqUpdate grpMaps = 
