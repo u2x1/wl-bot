@@ -36,6 +36,8 @@ dependencies:
 - bytestring
 - time
 
+extra-deps:
+
 library:
   source-dirs: src
 

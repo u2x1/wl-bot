@@ -23,7 +23,6 @@ instance ToJSON Message
 
 data Chat = Chat {
     id :: Integer
-  , username :: Text
 } deriving (Eq, Show, Generic)
 instance FromJSON Chat
 instance ToJSON Chat
