@@ -2,7 +2,7 @@
 
 module Data.Telegram where
 
-import Type.Telegram.Update as TG
+import Type.Telegram.Update (message, from, text, first_name, last_name, id, chat, Update)
 import Type.CQ.SendMsg
 import Type.Config
 
@@ -11,13 +11,14 @@ import Data.Maybe
 import Data.Tuple
 import Data.Text            as T
 
+import Prelude hiding (id)
+
 transTgGrpUpdate :: GroupMap -> Update -> Value
 transTgGrpUpdate q2tMaps tgUpdate =
   toJSON $ SendMsg <$> targetGrp <*> pure fwdText
     where
       fwdText = T.concat [content, " [", user, "]"]
-      user = first_name ((TG.from.message) tgUpdate)
-             <> fromMaybe "" ((last_name.TG.from.message) tgUpdate)
+      targetGrp = lookup fromGrp (swap <$> q2tMaps)
+      user = first_name ((from.message) tgUpdate)  <> fromMaybe "" ((last_name.from.message) tgUpdate)
       content = fromMaybe "" ((text.message) tgUpdate)
-      fromGrp = (TG.id.chat.message) tgUpdate
-      targetGrp = Prelude.lookup fromGrp (swap <$> q2tMaps)
+      fromGrp = (id.chat.message) tgUpdate

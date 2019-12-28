@@ -21,7 +21,7 @@ data Message = Message {
 instance FromJSON Message
 instance ToJSON Message
 
-data Chat = Chat {
+newtype Chat = Chat {
     id :: Integer
 } deriving (Eq, Show, Generic)
 instance FromJSON Chat

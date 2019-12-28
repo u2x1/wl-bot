@@ -9,6 +9,4 @@ data SendMsg = SendMsg {
     group_id :: Integer
   , message :: Text
 } deriving (Eq, Show, Generic)
-
-instance FromJSON SendMsg
 instance ToJSON SendMsg

@@ -19,24 +19,22 @@ getImgUrls [] = []
 
 getText :: [CQMsg] -> Int -> Text
 getText (x:cqMsg) picCount = case cqtype x of
-  "text"  -> fromJust (text $ cqdata x)                 <> getText cqMsg picCount
+  "text"  -> fromJust (CQ.text $ cqdata x)              <> getText cqMsg picCount
   "face"  -> fromJust (CQ.id $ cqdata x)                <> getText cqMsg picCount
-  "image" -> T.concat ["[P", pack $ show picCount, "]"] <> getText cqMsg (picCount + 1)
---  "at"    -> 
+  "image" -> T.concat ["[P", pack (show picCount), "]"] <> getText cqMsg (picCount + 1)
   _       -> getText cqMsg picCount
 getText [] _ = ""
 
 transfmCqGrpMsgUpdate :: GroupMap -> Update -> Value
 transfmCqGrpMsgUpdate q2tMaps cqUpdate =
   case getImgUrls $ message cqUpdate of
-    []        -> 
-      toJSON $ SendMsg <$> targetGrp <*> pure fwdText <*> Just "HTML"
+    [] -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText <*> Just "HTML"
 
     imgUrl:[] ->
       let imgcontent = InputMediaPhoto "photo" imgUrl (T.concat ["[<b>", username, "</b>]"]) "HTML" in
       toJSON $ SendMediaGrpMsg <$> targetGrp <*> Just [imgcontent]
 
-    imgUrls   -> 
+    imgUrls   ->
       let imgcontent = fmap (\url -> InputMediaPhoto "photo" url fwdText "HTML") imgUrls in
       toJSON $ SendMediaGrpMsg <$> targetGrp <*> pure imgcontent
     where

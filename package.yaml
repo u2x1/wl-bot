@@ -21,13 +21,13 @@ description:         A bot used to forward messages between Telegram and QQ.
 
 dependencies:
 - base >= 4.7 && < 5
+- concurrent-extra
 - transformers
 - network
 - containers
 - aeson
 - conduit
 - lens
-- scotty
 - text
 - wai-extra
 - data-default
@@ -35,6 +35,7 @@ dependencies:
 - http-types
 - bytestring
 - time
+- scotty
 
 extra-deps:
 
