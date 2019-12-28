@@ -15,7 +15,8 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 1. Download the pre-build binary file at [latest release](https://github.com/Nutr1t07/wl-bot/releases/latest).
 
 2. Create `config.json` under the same directory as `wl-bot-exe`:
-   ```
+
+   ```json
    {
       "groups":[
          [QQgroupidhere, TGgroupidhere]
@@ -25,8 +26,10 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
       "port":
    }
    ```
+
    For example:
-   ```
+
+   ```json
    {
       "groups":[
          [124234231, -12514514]
@@ -37,16 +40,19 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
       "port":8443
    }
    ```
+
 3. Enable Coolq **Http API** plugin, set the plugin:
-   ```
+
+   ```json
    "post_message_format": "array"
    "post_url": "http://yoursever:port/cq/"
    ```
-  
+
 4. Set Telegram webhook:
-   Open url from browser: https://api.telegram.org/botyourbottoken/setWebhook?url=https://yourserver:port/telegram/
-   
+   Open url from browser: <https://api.telegram.org/botyourbottoken/setWebhook?url=https://yourserver:port/telegram/>
+
 5. Run `wl-bot-exe`:
-   ```
+
+   ```bash
    ./wl-bot-exe
    ```
