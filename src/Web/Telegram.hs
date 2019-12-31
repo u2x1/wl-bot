@@ -3,7 +3,7 @@ module Web.Telegram where
 
 import Type.CQ.Update             as CQ     (Update, message)
 import Type.Config                          (GroupMap)
-import Data.CQ                    as CQ     (transfmCqGrpMsgUpdate, getImgUrls)
+import Data.CQ                    as CQ     (getImgRequest, getTextRequest, getImgUrls)
 import Network.Wreq
 import Data.Aeson
 import Data.Text
@@ -14,24 +14,25 @@ import Control.Concurrent
 import Control.Concurrent.Lock
 import Utils.Logging
 
-fwdQQtoTGsync :: Lock -> String -> CQ.Update -> GroupMap -> IO ThreadId
-fwdQQtoTGsync lock tgbotTk cqUpdate grpMaps = do
-  wait lock
-  acquire lock
-  forkFinally (fwdQQtoTG tgbotTk cqUpdate grpMaps) handleExp
-  where
-   handleExp (Right _) = logWT "Info" "Forwarded a message to TG" >> release lock
-   handleExp (Left err)  = logWT "Error" ("Failed to forward a message: " <> show err) >> release lock
-
-fwdQQtoTG :: String -> Update -> GroupMap -> IO (Maybe (Response ByteString))
-fwdQQtoTG tgbotTk cqUpdate grpMaps =
-  case transfmCqGrpMsgUpdate grpMaps cqUpdate of
+fwdQQtoTG :: Lock -> String -> Update -> GroupMap -> IO (Maybe ThreadId)
+fwdQQtoTG lock tgbotTk cqUpdate grpMaps =
+  case getTextRequest grpMaps cqUpdate of
     Null -> pure Nothing
     tgReq ->
       case getImgUrls $ message cqUpdate of
-        []      -> Just <$> postTgRequest tgbotTk "sendMessage" tgReq
-        imgUrls -> Just <$> postTgRequest tgbotTk "sendMediaGroup" tgReq
+        []      -> Just <$> postTgRequestSync lock tgbotTk "sendMessage" tgReq
+        imgUrls -> Just <$> do
+          postTgRequestSync lock tgbotTk "sendMessage" tgReq
+          postTgRequestSync lock tgbotTk "sendMediaGroup" tgReqWithImg
+            where tgReqWithImg = getImgRequest grpMaps cqUpdate
 
 postTgRequest :: String -> String -> Value -> IO (Response ByteString)
 postTgRequest tgbotTk method = post target
   where target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method
+
+postTgRequestSync :: Lock -> String -> String -> Value -> IO ThreadId
+postTgRequestSync lock tgbotTk method jsonContent= do
+  wait lock >> acquire lock
+  forkFinally (postTgRequest tgbotTk method jsonContent) handleExp
+  where
+    handleExp _ = logWT "Info" "Posted a request to Telgram" >> release lock

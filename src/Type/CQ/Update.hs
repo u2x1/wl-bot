@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Type.CQ.Update where
 
 import Data.Aeson
 import Data.Text (Text)
 import GHC.Generics
+import Utils.Json
 
 data Update = Update {
     post_type :: Text
@@ -19,11 +19,9 @@ instance FromJSON Update
 data CQMsg = CQMsg {
     cqtype :: Text
   , cqdata :: CQMsgData
-} deriving (Eq, Show)
+} deriving (Eq, Show, Generic)
 instance FromJSON CQMsg where
-  parseJSON = withObject "CQMsg" $ \v -> CQMsg
-    <$> v .: "type"
-    <*> v .: "data"
+  parseJSON = dropParseJSON 2
 
 data CQMsgData = CQMsgData {
     text :: Maybe Text
@@ -33,7 +31,7 @@ data CQMsgData = CQMsgData {
 } deriving (Eq, Show, Generic)
 instance FromJSON CQMsgData
 
-data Sender = Sender {
+newtype Sender = Sender {
     nickname :: Text
 } deriving (Eq, Show, Generic)
 instance FromJSON Sender

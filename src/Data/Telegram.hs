@@ -2,7 +2,7 @@
 
 module Data.Telegram where
 
-import Type.Telegram.Update (message, from, text, first_name, last_name, id, chat, Update)
+import Type.Telegram.Update 
 import Type.CQ.SendMsg
 import Type.Config
 
@@ -19,6 +19,10 @@ transTgGrpUpdate q2tMaps tgUpdate =
     where
       fwdText = T.concat [content, " [", user, "]"]
       targetGrp = lookup fromGrp (swap <$> q2tMaps)
-      user = first_name ((from.message) tgUpdate)  <> fromMaybe "" ((last_name.from.message) tgUpdate)
-      content = fromMaybe "" ((text.message) tgUpdate)
-      fromGrp = (id.chat.message) tgUpdate
+      user = first_name (from msg)  <> fromMaybe "" ((last_name.from) msg)
+      content = fromMaybe "" (text msg)
+      fromGrp = (id.chat) msg
+      msg = case message tgUpdate of
+              Just new_msg -> new_msg
+              Nothing -> case edited_message tgUpdate of
+                           Just edited_msg -> edited_msg

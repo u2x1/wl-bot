@@ -7,7 +7,8 @@ import GHC.Generics
 
 data Update = Update {
     update_id :: Integer
-  , message :: Message
+  , message :: Maybe Message
+  , edited_message :: Maybe Message
 } deriving (Eq, Show, Generic)
 instance FromJSON Update
 instance ToJSON Update

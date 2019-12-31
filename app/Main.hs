@@ -31,11 +31,11 @@ runServer config = do
     middleware logStdoutDev
     post (literal "/telegram/") $ do
       update <- jsonData :: ActionM TG.Update
-      liftIO $ forkFinally (fwdTGtoQQsync cqLock (cqServer config) update (groups config)) handleExp
+      liftIO $ fwdTGtoQQ cqLock (cqServer config) update (groups config)
       status status204
     post (literal "/cq/") $ do
       update <- jsonData :: ActionM CQ.Update
-      liftIO $ forkFinally (fwdQQtoTGsync tgLock (tgbotToken config) update (groups config)) handleExp
+      liftIO $ fwdQQtoTG tgLock (tgbotToken config) update (groups config)
       status status204
     where
       handleExp _ = pure ()

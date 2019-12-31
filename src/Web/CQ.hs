@@ -13,22 +13,20 @@ import Control.Concurrent
 import Control.Concurrent.Lock
 import Utils.Logging
 
-fwdTGtoQQsync :: Lock -> String -> TG.Update -> GroupMap -> IO ThreadId
-fwdTGtoQQsync lock cqServer tgUpdate grpMaps = do
-  wait lock
-  acquire lock
-  forkFinally (fwdTGtoQQ cqServer tgUpdate grpMaps) handleExp
-  where
-    handleExp (Right _) = logWT "Info" "Forwarded a message to QQ" >> release lock
-    handleExp (Left err)  = logWT "Error" ("Failed to forward a message: " <> show err) >> release lock
-
-fwdTGtoQQ :: String -> Update -> GroupMap -> IO (Maybe (Response ByteString))
-fwdTGtoQQ cqServer tgUpdate grpMaps =
+fwdTGtoQQ :: Lock -> String -> Update -> GroupMap -> IO (Maybe ThreadId)
+fwdTGtoQQ lock cqServer tgUpdate grpMaps =
   case cqReq of
     Null -> pure Nothing
-    _ -> Just <$> postCqRequest cqServer "send_group_msg" cqReq
+    _ -> Just <$> postCqRequestSync lock cqServer "send_group_msg" cqReq
   where cqReq = transTgGrpUpdate grpMaps tgUpdate
 
 postCqRequest :: String -> String -> Value -> IO (Response ByteString)
 postCqRequest cqServer method = post target
   where target = cqServer ++ "/" ++ method
+
+postCqRequestSync :: Lock -> String -> String -> Value -> IO ThreadId
+postCqRequestSync lock cqServer method jsonContent = do
+  wait lock >> acquire lock
+  forkFinally (postCqRequest cqServer method jsonContent) handleExp
+    where
+      handleExp _ = logWT "Info" "Posted a request to CoolQ" >> release lock
