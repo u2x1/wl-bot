@@ -2,12 +2,12 @@
 
 module Data.Telegram where
 
-import Type.Telegram.Update 
-import Type.CQ.SendMsg
+import Type.Telegram.Update
+import Type.CoolQ.SendMsg
 import Type.Config
 
 import Data.Aeson
-import Data.Maybe 
+import Data.Maybe
 import Data.Tuple
 import Data.Text            as T
 
@@ -15,14 +15,19 @@ import Prelude hiding (id)
 
 transTgGrpUpdate :: GroupMap -> Update -> Value
 transTgGrpUpdate q2tMaps tgUpdate =
-  toJSON $ SendMsg <$> targetGrp <*> pure fwdText
-    where
-      fwdText = T.concat [content, " [", user, "]"]
-      targetGrp = lookup fromGrp (swap <$> q2tMaps)
-      user = first_name (from msg)  <> fromMaybe "" ((last_name.from) msg)
-      content = fromMaybe "" (text msg)
-      fromGrp = (id.chat) msg
-      msg = case message tgUpdate of
-              Just new_msg -> new_msg
-              Nothing -> case edited_message tgUpdate of
-                           Just edited_msg -> edited_msg
+  case message tgUpdate of
+    Just new_msg -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
+      where
+        content = fromMaybe "" (text new_msg)
+        targetGrp = lookup fromGrp (swap <$> q2tMaps)
+        fromGrp = (id.chat) new_msg
+        user = first_name (from new_msg)  <> fromMaybe "" ((last_name.from) new_msg)
+        fwdText = T.concat [content, " [", user, "]"]
+    Nothing -> case edited_message tgUpdate of
+                 Just edited_msg -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
+                   where
+                     fwdText = T.concat ["User[", user, "] edited the following message:\n", content]
+                     targetGrp = lookup fromGrp (swap <$> q2tMaps)
+                     fromGrp = (id.chat) edited_msg
+                     user = first_name (from edited_msg)  <> fromMaybe "" ((last_name.from) edited_msg)
+                     content = fromMaybe "" (text edited_msg)

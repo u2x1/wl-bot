@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Type.CQ.User where
+module Type.CoolQ.User where
 
 import Data.Text
 import Data.Aeson

@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Type.CQ.SendMsg (SendMsg (SendMsg)) where
+module Type.CoolQ.SendMsg (SendMsg (SendMsg)) where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)

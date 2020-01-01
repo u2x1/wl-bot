@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Type.CQ.Update where
+module Type.CoolQ.Update where
 
 import Data.Aeson
 import Data.Text (Text)

@@ -8,12 +8,10 @@ import Control.Concurrent                    (forkFinally)
 import Data.Maybe                            (fromMaybe)
 import Data.ByteString.Lazy as B
 import Data.Aeson                            (decode)
-import Data.CQ
-import Data.Telegram
 import Type.Telegram.Update as TG
-import Type.CQ.Update       as CQ
+import Type.CoolQ.Update    as CQ
 import Type.Config
-import Web.CQ
+import Web.CoolQ
 import Web.Telegram
 import Utils.Config
 import Utils.Logging

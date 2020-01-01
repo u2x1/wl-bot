@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Web.Telegram where
 
-import Type.CQ.Update             as CQ     (Update, message)
+import Type.CoolQ.Update          as CQ     (Update, message)
 import Type.Config                          (GroupMap)
-import Data.CQ                    as CQ     (getImgRequest, getTextRequest, getImgUrls)
+import Data.CoolQ                 as CQ     (getImgRequest, getTextRequest, getImgUrls)
 import Network.Wreq
 import Data.Aeson
 import Data.Text
@@ -20,19 +20,20 @@ fwdQQtoTG lock tgbotTk cqUpdate grpMaps =
     Null -> pure Nothing
     tgReq ->
       case getImgUrls $ message cqUpdate of
-        []      -> Just <$> postTgRequestSync lock tgbotTk "sendMessage" tgReq
-        imgUrls -> Just <$> do
-          postTgRequestSync lock tgbotTk "sendMessage" tgReq
-          postTgRequestSync lock tgbotTk "sendMediaGroup" tgReqWithImg
-            where tgReqWithImg = getImgRequest grpMaps cqUpdate
+         []      -> Just <$> postTgRequest lock tgbotTk "sendMessage" tgReq
+         _:[]    -> Just <$> postTgRequest lock tgbotTk "sendMediaGroup" tgReqWithImg
+         imgUrls -> Just <$> do
+           postTgRequest lock tgbotTk "sendMessage" tgReq
+           postTgRequest lock tgbotTk "sendMediaGroup" tgReqWithImg
+         where
+           tgReqWithImg = getImgRequest grpMaps cqUpdate
 
-postTgRequest :: String -> String -> Value -> IO (Response ByteString)
-postTgRequest tgbotTk method = post target
-  where target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method
-
-postTgRequestSync :: Lock -> String -> String -> Value -> IO ThreadId
-postTgRequestSync lock tgbotTk method jsonContent= do
-  wait lock >> acquire lock
-  forkFinally (postTgRequest tgbotTk method jsonContent) handleExp
+postTgRequest :: Lock -> String -> String -> Value -> IO ThreadId
+postTgRequest = ((.).(.).(.).(.)) (`forkFinally` handleExp) postTgRequestSync
   where
-    handleExp _ = logWT "Info" "Posted a request to Telgram" >> release lock
+    handleExp _ = logWT "Info" "Posted a request to Telgram"
+
+postTgRequestSync :: Lock -> String -> String -> Value -> IO ()
+postTgRequestSync lock tgbotTk method jsonContent = acquire lock >> post target jsonContent >> release lock
+  where
+    target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method
