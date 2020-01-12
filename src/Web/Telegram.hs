@@ -12,6 +12,7 @@ import Data.Tuple
 import Data.ByteString.Lazy
 import Control.Concurrent
 import Control.Concurrent.Lock
+import Control.Exception.Base
 import Utils.Logging
 
 fwdQQtoTG :: Lock -> String -> Update -> GroupMap -> IO (Maybe ThreadId)
@@ -29,11 +30,12 @@ fwdQQtoTG lock tgbotTk cqUpdate grpMaps =
            tgReqWithImg = getImgRequest grpMaps cqUpdate
 
 postTgRequest :: Lock -> String -> String -> Value -> IO ThreadId
-postTgRequest = ((.).(.).(.).(.)) (`forkFinally` handleExp) postTgRequestSync
-  where
-    handleExp _ = logWT "Info" "Posted a request to Telgram"
+postTgRequest = ((.).(.).(.).(.)) forkIO postTgRequestSync
 
 postTgRequestSync :: Lock -> String -> String -> Value -> IO ()
-postTgRequestSync lock tgbotTk method jsonContent = acquire lock >> post target jsonContent >> release lock
+postTgRequestSync lock tgbotTk method jsonContent = do
+  acquire lock
+  try (post target jsonContent) :: IO (Either SomeException (Response ByteString))
+  release lock
   where
     target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method
