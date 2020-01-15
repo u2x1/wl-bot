@@ -15,19 +15,29 @@ import Prelude hiding (id)
 
 transTgGrpUpdate :: GroupMap -> Update -> Value
 transTgGrpUpdate q2tMaps tgUpdate =
-  case message tgUpdate of
-    Just new_msg -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
-      where
-        content = fromMaybe "" (text new_msg)
-        targetGrp = lookup fromGrp (swap <$> q2tMaps)
-        fromGrp = (id.chat) new_msg
-        user = first_name (from new_msg)  <> fromMaybe "" ((last_name.from) new_msg)
-        fwdText = T.concat [content, " [", user, "]"]
-    Nothing -> case edited_message tgUpdate of
-                 Just edited_msg -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
-                   where
-                     fwdText = T.concat ["User[", user, "] edited the following message:\n", content]
-                     targetGrp = lookup fromGrp (swap <$> q2tMaps)
-                     fromGrp = (id.chat) edited_msg
-                     user = first_name (from edited_msg)  <> fromMaybe "" ((last_name.from) edited_msg)
-                     content = fromMaybe "" (text edited_msg)
+  let msgs = [message, edited_message] <*> pure tgUpdate
+      msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs in
+  handleMsgTypes msg_type
+    where
+      handleMsgTypes mtype =
+        case mtype of
+          -- Common message
+          0 -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
+            where
+              common_msg = fromJust $ message tgUpdate
+              content = fromMaybe "" (text common_msg)
+              targetGrp = lookup fromGrp (swap <$> q2tMaps)
+              fromGrp = (id.chat) common_msg
+              user = first_name (from common_msg)  <> fromMaybe "" ((last_name.from) common_msg)
+              fwdText = T.concat [content, " [", user, "]"]
+
+          -- Edited message
+          1 -> toJSON $ SendMsg <$> targetGrp <*> pure fwdText
+            where
+              edited_msg = fromJust $ edited_message tgUpdate
+              fwdText = T.concat ["User[", user, "] edited the following message:\n", content]
+              targetGrp = lookup fromGrp (swap <$> q2tMaps)
+              fromGrp = (id.chat) edited_msg
+              user = first_name (from edited_msg)  <> fromMaybe "" ((last_name.from) edited_msg)
+              content = fromMaybe "" (text edited_msg)
+
