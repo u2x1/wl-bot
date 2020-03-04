@@ -15,7 +15,7 @@ exampleConfig = Config
 
 makeExampleConfig :: SomeException -> IO ByteString
 makeExampleConfig _ = do
-  logWT "Warning" "No config file found. Creating example file."
+  logWT "Error" "No config file found. Creating example file."
   BL.writeFile "config.json" (encode exampleConfig)
   return (encode exampleConfig)
 

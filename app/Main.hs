@@ -7,7 +7,7 @@ import Control.Exception                     (try, SomeException)
 import Control.Concurrent                    (forkFinally)
 import Data.Maybe                            (fromMaybe)
 import Data.ByteString.Lazy as B
-import Data.Aeson                            (decode)
+import Data.Aeson                            (eitherDecode)
 import Type.Telegram.Update as TG
 import Type.CoolQ.Update    as CQ
 import Type.Config
@@ -19,9 +19,13 @@ import Utils.Logging
 main = do
   cb <- try $ B.readFile "config.json" :: IO (Either SomeException ByteString)
   case cb of
-    Right c -> runServer $ fromMaybe exampleConfig (decode c :: Maybe Config)
+    Right c ->
+      case eitherDecode c :: Either String Config of
+        Right config -> runServer config
+        Left err -> logWT "Error" ("Failed to parse config file: " <> err)
     Left err -> logWT "Error" ("Failed to open config file: " <> show err)
 
+runServer :: Config -> IO ()
 runServer config = do
   tgLock <- new :: IO Lock
   cqLock <- new :: IO Lock
@@ -35,5 +39,3 @@ runServer config = do
       update <- jsonData :: ActionM CQ.Update
       liftIO $ fwdQQtoTG tgLock (tgbotToken config) update (groups config)
       status status204
-    where
-      handleExp _ = pure ()
