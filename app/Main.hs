@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 import Web.Scotty
 import Network.HTTP.Types                    (status204)
 import Network.Wai.Middleware.RequestLogger
@@ -8,13 +9,12 @@ import Control.Concurrent                    (forkFinally)
 import Data.Maybe                            (fromMaybe)
 import Data.ByteString.Lazy as B
 import Data.Aeson                            (eitherDecode)
-import Type.Telegram.Update as TG
-import Type.CoolQ.Update    as CQ
-import Type.Config
-import Web.CoolQ
-import Web.Telegram
+import Core.Type.Telegram.Update as TG
+import Core.Type.CoolQ.Update    as CQ
 import Utils.Config
 import Utils.Logging
+
+import Plugin.Forwarder
 
 main = do
   cb <- try $ B.readFile "config.json" :: IO (Either SomeException ByteString)
@@ -22,8 +22,8 @@ main = do
     Right c ->
       case eitherDecode c :: Either String Config of
         Right config -> runServer config
-        Left err -> logWT "Error" ("Failed to parse config file: " <> err)
-    Left err -> logWT "Error" ("Failed to open config file: " <> show err)
+        Left err -> logWT "Error" ("Failed parsing config file: " <> err)
+    Left err -> logWT "Error" ("Failed opening config file: " <> show err)
 
 runServer :: Config -> IO ()
 runServer config = do

@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Data.CoolQ where
+module Core.Data.CoolQ where
 
-import Type.CoolQ.Update         as CQ
-import Type.Telegram.Request
-import Type.Config
+import Core.Type.CoolQ.Update         as CQ
+import Core.Type.Telegram.Request
+import Utils.Config
 
 import Data.Text              as T
 import Data.Text.Read

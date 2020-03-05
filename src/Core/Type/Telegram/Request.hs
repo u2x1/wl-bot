@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Type.Telegram.Request
+module Core.Type.Telegram.Request
   (
     SendMsg (SendMsg),
     SendMediaGrp (SendMediaGrp),

@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Type.Telegram.Update where
+module Core.Type.Telegram.Update where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)

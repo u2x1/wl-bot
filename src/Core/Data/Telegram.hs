@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Telegram where
+module Core.Data.Telegram where
 
-import Type.Telegram.Update
-import Type.CoolQ.SendMsg
-import Type.Config
+import Core.Type.Telegram.Update
+import Core.Type.CoolQ.SendMsg
+import Utils.Config
 
 import Data.Aeson
 import Data.Maybe

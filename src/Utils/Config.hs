@@ -1,11 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Utils.Config where
 
 import Control.Exception
 import Data.Aeson
 import Data.ByteString.Lazy as BL
 import Utils.Logging
-import Type.Config
+import Data.Text (Text)
+import GHC.Generics
+
+type GroupMap = [(Integer, Integer)]
+
+data Config = Config {
+--    admins :: [Int]
+    port :: Int
+  , cqServer :: String
+  , tgbotToken :: String
+  , groups :: GroupMap
+} deriving (Eq, Show, Generic)
+instance FromJSON Config
+instance ToJSON Config
 
 exampleConfig = Config 
                   8443
