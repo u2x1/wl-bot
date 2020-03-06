@@ -16,6 +16,7 @@ import Utils.Logging
 import Utils.Webhook
 
 import Plugin.Forwarder
+import Plugin.BaikeSearcher
 
 main = do
   cb <- try $ B.readFile "config.json" :: IO (Either SomeException ByteString)
@@ -38,15 +39,16 @@ runServer config = do
 
 
 handleTGMsg :: Config -> Lock -> ScottyM ()
-handleTGMsg config cqLock =
+handleTGMsg config lock =
   post (literal "/telegram/") $ do
     update <- jsonData :: ActionM TG.Update
-    liftIO $ fwdTGMsg cqLock config update
+    liftIO $ fwdTGMsg lock config update
     status status204
 
 handleCQMsg :: Config -> Lock -> ScottyM ()
-handleCQMsg config tgLock =
+handleCQMsg config lock =
   post (literal "/cq/") $ do
     update <- jsonData :: ActionM CQ.Update
-    liftIO $ fwdQQMsg tgLock config update
+    liftIO $ fwdQQMsg lock config update
+    liftIO $ processCQQuery lock config update
     status status204

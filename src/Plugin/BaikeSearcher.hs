@@ -1,12 +1,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Plugin.BaikeSearcher where
 
+import Core.Web.CoolQ                       as CQ
+import Core.Web.Telegram                    as TG
+
+import Core.Type.CoolQ.Update               as CQ
+import Core.Type.CoolQ.SendMsg              as CQ
+import Core.Type.Telegram.Update            as TG
+
+import Core.Data.CoolQ                      as CQ
+import Core.Data.Telegram                   as TG
+
+import Utils.Config
+
 import           Network.Wreq
 import           Control.Lens
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy.Char8 as Char8
 import           Data.ByteString.Lazy       as BL
 import           Data.ByteString.Lazy.Search
+import qualified Data.Text                  as Text
+import qualified Data.Text.Lazy             as TextL
+import Data.Text.Lazy.Encoding
+import Data.Aeson
+import Control.Concurrent
+import Control.Concurrent.Lock
 
 searchBetween :: BS.ByteString -> BS.ByteString -> ByteString -> ByteString
 searchBetween left right content =
@@ -39,3 +57,17 @@ runBaikeSearch query = do
   pure $ filterConcatWord $ getWords $ getFirstPara $ realRsp ^. responseBody
   where
     getFirstPara = searchBetween "<div class=\"para\" label-module=\"para\"" "</div>"
+
+processCQQuery :: Lock -> Config -> CQ.Update -> IO (Maybe ThreadId)
+processCQQuery lock config cqUpdate
+  | not $ searchOn config = pure Nothing
+  | otherwise =
+    let cqSvr = cqServer config in
+    if Text.take 4 msgTxt == "/qr "
+       then do
+         result <- runBaikeSearch $ Text.unpack $ Text.strip (Text.drop 4 msgTxt)
+         let req = toJSON $ SendMsg <$> group_id cqUpdate <*> Just (TextL.toStrict $ decodeUtf8 result)
+         Just <$> postCqRequest lock cqSvr "send_group_msg" req
+       else pure Nothing
+    where
+      msgTxt = getText (CQ.message cqUpdate)
