@@ -40,9 +40,9 @@ runServer config = do
 handleTGMsg :: Config -> Lock -> ScottyM ()
 handleTGMsg config cqLock =
   post (literal "/telegram/") $ do
-      update <- jsonData :: ActionM TG.Update
-      liftIO $ fwdTGMsg cqLock config update
-      status status204
+    update <- jsonData :: ActionM TG.Update
+    liftIO $ fwdTGMsg cqLock config update
+    status status204
 
 handleCQMsg :: Config -> Lock -> ScottyM ()
 handleCQMsg config tgLock =
