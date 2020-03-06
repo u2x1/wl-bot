@@ -13,6 +13,7 @@ import Core.Type.Telegram.Update as TG
 import Core.Type.CoolQ.Update    as CQ
 import Utils.Config
 import Utils.Logging
+import Utils.Webhook
 
 import Plugin.Forwarder
 
@@ -27,15 +28,25 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
+  setTelegramWebhook config
   tgLock <- new :: IO Lock
   cqLock <- new :: IO Lock
   scotty (port config) $ do
     middleware logStdoutDev
-    post (literal "/telegram/") $ do
+    handleTGMsg config cqLock
+    handleCQMsg config cqLock
+
+
+handleTGMsg :: Config -> Lock -> ScottyM ()
+handleTGMsg config cqLock =
+  post (literal "/telegram/") $ do
       update <- jsonData :: ActionM TG.Update
-      liftIO $ fwdTGtoQQ cqLock (cqServer config) update (groups config)
+      liftIO $ fwdTGMsg cqLock config update
       status status204
-    post (literal "/cq/") $ do
-      update <- jsonData :: ActionM CQ.Update
-      liftIO $ fwdQQtoTG tgLock (tgbotToken config) update (groups config)
-      status status204
+
+handleCQMsg :: Config -> Lock -> ScottyM ()
+handleCQMsg config tgLock =
+  post (literal "/cq/") $ do
+    update <- jsonData :: ActionM CQ.Update
+    liftIO $ fwdQQMsg tgLock config update
+    status status204

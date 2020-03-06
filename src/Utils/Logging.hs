@@ -2,6 +2,7 @@ module Utils.Logging where
 
 import Data.Time
 
+-- Log with tag
 logWT :: String -> String -> IO ()
 logWT tag msg = do
   t <- getCurrentTime

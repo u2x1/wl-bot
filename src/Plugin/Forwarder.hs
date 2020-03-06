@@ -11,11 +11,13 @@ import Core.Data.CoolQ           as CQ      (getImgRequest, getTextRequest, getI
 
 import Control.Concurrent
 import Control.Concurrent.Lock
-import Utils.Config                         (GroupMap)
+import Utils.Config
 import Data.Aeson
 
-fwdQQtoTG :: Lock -> String -> CQ.Update -> GroupMap -> IO (Maybe ThreadId)
-fwdQQtoTG lock tgbotTk cqUpdate grpMaps =
+fwdQQMsg :: Lock -> Config -> CQ.Update -> IO (Maybe ThreadId)
+fwdQQMsg lock config cqUpdate =
+  let grpMaps = groups config
+      tgbotTk = tgbotToken config in
   case getTextRequest grpMaps cqUpdate of
     Null -> pure Nothing
     tgReq ->
@@ -28,9 +30,10 @@ fwdQQtoTG lock tgbotTk cqUpdate grpMaps =
          where
            tgReqWithImg = getImgRequest grpMaps cqUpdate
 
-fwdTGtoQQ :: Lock -> String -> TG.Update -> GroupMap -> IO (Maybe ThreadId)
-fwdTGtoQQ lock cqServer tgUpdate grpMaps =
-  case cqReq of
+fwdTGMsg :: Lock -> Config -> TG.Update -> IO (Maybe ThreadId)
+fwdTGMsg lock config tgUpdate =
+  let grpMaps = groups config
+      cqSvr = cqServer config in
+  case transTgGrpUpdate grpMaps tgUpdate of
     Null -> pure Nothing
-    _ -> Just <$> postCqRequest lock cqServer "send_group_msg" cqReq
-  where cqReq = transTgGrpUpdate grpMaps tgUpdate
+    req -> Just <$> postCqRequest lock cqSvr "send_group_msg" req
