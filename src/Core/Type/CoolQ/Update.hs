@@ -12,7 +12,7 @@ data Update = Update {
   , sender :: Sender
   , group_id :: Maybe Integer
   , message :: [CQMsg]
-  , raw_message :: Maybe Text
+  , raw_message :: Text
 } deriving (Eq, Show, Generic)
 instance FromJSON Update
 

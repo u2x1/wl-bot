@@ -12,8 +12,9 @@ import Core.Data.CoolQ                      as CQ
 import Core.Data.Telegram                   as TG
 
 import Utils.Config
+import Utils.Logging
 
-import           Network.Wreq
+import           Network.Wreq               as Wreq
 import           Control.Lens
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy.Char8 as Char8
@@ -52,8 +53,8 @@ filterConcatWord oStr = replace "\n" (""::BL.ByteString) s
 
 runBaikeSearch :: String -> IO ByteString
 runBaikeSearch query = do
-  result <- get $ "https://baike.baidu.com/search?word=" ++ query
-  realRsp <- get $ getFstUrl $ result ^. responseBody
+  result <- Wreq.get $ "https://baike.baidu.com/search?word=" ++ query
+  realRsp <- Wreq.get $ getFstUrl (result ^. responseBody)
   pure $ filterConcatWord $ getWords $ getFirstPara $ realRsp ^. responseBody
   where
     getFirstPara = searchBetween "<div class=\"para\" label-module=\"para\"" "</div>"

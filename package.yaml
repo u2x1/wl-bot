@@ -35,10 +35,7 @@ dependencies:
 - bytestring
 - time
 - scotty
-- attoparsec
 - stringsearch
-
-extra-deps:
 
 library:
   source-dirs: src
@@ -48,9 +45,9 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
-    - -threaded
     - -static
     - -O2
+      #    - -threaded
     cc-options: -static
     ld-options: -static -pthread
     dependencies:

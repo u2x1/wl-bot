@@ -20,11 +20,11 @@ getImgUrls [] = []
 getText :: [CQMsg] -> Text
 getText msg = go msg 0
   where
+    go [] _ = ""
     go (x:cqMsg) picCount = case cqtype x of
       "text"  -> fromJust (CQ.text $ cqdata x)              <> go cqMsg picCount
       "image" -> T.concat ["[P", pack (show picCount), "]"] <> go cqMsg (picCount + 1)
       _       -> "[[Unsupported Message]]"                  <> go cqMsg picCount
-    go [] _ = ""
 
 getTextRequest :: GroupMap -> Update -> Value
 getTextRequest q2tMaps cqUpdate =

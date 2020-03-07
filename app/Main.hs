@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Web.Scotty
+import Web.Scotty                as Scotty
 import Network.HTTP.Types                    (status204)
 import Network.Wai.Middleware.RequestLogger
+import Network.Wreq              as Wreq
 import Control.Monad.IO.Class                (liftIO)
 import Control.Concurrent.Lock
 import Control.Exception                     (try, SomeException)
@@ -29,7 +30,7 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
-  setTelegramWebhook config
+  try $ setTelegramWebhook config :: IO (Either SomeException (Response ByteString))
   tgLock <- new :: IO Lock
   cqLock <- new :: IO Lock
   scotty (port config) $ do
@@ -40,14 +41,14 @@ runServer config = do
 
 handleTGMsg :: Config -> Lock -> ScottyM ()
 handleTGMsg config lock =
-  post (literal "/telegram/") $ do
+  Scotty.post (literal "/telegram/") $ do
     update <- jsonData :: ActionM TG.Update
     liftIO $ fwdTGMsg lock config update
     status status204
 
 handleCQMsg :: Config -> Lock -> ScottyM ()
 handleCQMsg config lock =
-  post (literal "/cq/") $ do
+  Scotty.post (literal "/cq/") $ do
     update <- jsonData :: ActionM CQ.Update
     liftIO $ fwdQQMsg lock config update
     liftIO $ processCQQuery lock config update
