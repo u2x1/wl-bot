@@ -16,7 +16,7 @@ import Prelude hiding (id)
 
 transTgGrpUpdate :: GroupMap -> Update -> Value
 transTgGrpUpdate q2tMaps tgUpdate =
-  toJSON $ SendMsg <$> fst msgInfo <*> pure (snd msgInfo)
+  toJSON $ SendGrpMsg <$> fst msgInfo <*> pure (snd msgInfo)
   where
     msgInfo = handleMsg msg_type msgs q2tMaps
     msgs = [message, edited_message] <*> pure tgUpdate

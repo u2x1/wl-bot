@@ -1,12 +1,22 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Core.Type.CoolQ.SendMsg (SendMsg (SendMsg)) where
+module Core.Type.CoolQ.SendMsg where
 
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson
 import Data.Text (Text)
 import GHC.Generics
 
-data SendMsg = SendMsg {
-    group_id :: Integer
-  , message :: Text
+import Utils.Json
+
+data SendGrpMsg = SendGrpMsg {
+    grp_group_id :: Integer
+  , grp_message :: Text
 } deriving (Eq, Show, Generic)
-instance ToJSON SendMsg
+instance ToJSON SendGrpMsg where
+  toJSON = dropToJSON 4
+
+data SendPrivMsg = SendPrivMsg {
+    priv_user_id :: Integer
+  , priv_message :: Text
+} deriving (Eq, Show, Generic)
+instance ToJSON SendPrivMsg where
+  toJSON = dropToJSON 5

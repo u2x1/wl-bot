@@ -24,6 +24,7 @@ import qualified Data.Text                  as Text
 import qualified Data.Text.Lazy             as TextL
 import Data.Text.Lazy.Encoding
 import Data.Aeson
+import Data.Maybe
 import Control.Concurrent
 import Control.Concurrent.Lock
 
@@ -67,8 +68,10 @@ processCQQuery lock config cqUpdate
     if Text.take 4 msgTxt == "/qr "
        then do
          result <- runBaikeSearch $ Text.unpack $ Text.strip (Text.drop 4 msgTxt)
-         let req = toJSON $ SendMsg <$> group_id cqUpdate <*> Just (TextL.toStrict $ decodeUtf8 result)
-         Just <$> postCqRequest lock cqSvr "send_group_msg" req
+         let resultText = Just (TextL.toStrict $ decodeUtf8 result)
+         if isNothing $ group_id cqUpdate
+            then Just <$> postCqRequest lock cqSvr "send_private_msg" (toJSON (SendPrivMsg <$> user_id cqUpdate <*> resultText))
+            else Just <$> postCqRequest lock cqSvr "send_group_msg" (toJSON (SendGrpMsg <$> group_id cqUpdate <*> resultText))
        else pure Nothing
     where
       msgTxt = getText (CQ.message cqUpdate)

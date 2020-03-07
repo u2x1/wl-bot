@@ -11,6 +11,7 @@ data Update = Update {
   , message_type :: Text
   , sender :: Sender
   , group_id :: Maybe Integer
+  , user_id :: Maybe Integer
   , message :: [CQMsg]
   , raw_message :: Text
 } deriving (Eq, Show, Generic)
