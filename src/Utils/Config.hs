@@ -1,10 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Utils.Config where
 
-import Control.Exception
 import Data.Aeson
-import Data.ByteString.Lazy as BL
-import Utils.Logging
 import GHC.Generics
 
 type GroupMap = [(Integer, Integer)]

@@ -25,8 +25,8 @@ fwdQQMsg config cqUpdate
         case getImgUrls $ CQ.message cqUpdate of
            []      -> Just <$> postTgRequest tgbotTk "sendMessage" tgReq
            _:[]    -> Just <$> postTgRequest tgbotTk "sendMediaGroup" tgReqWithImg
-           imgUrls -> Just <$> do
-             postTgRequest tgbotTk "sendMessage" tgReq
+           _ -> Just <$> do
+             _ <- postTgRequest tgbotTk "sendMessage" tgReq
              postTgRequest tgbotTk "sendMediaGroup" tgReqWithImg
            where
              tgReqWithImg = getImgRequest grpMaps cqUpdate

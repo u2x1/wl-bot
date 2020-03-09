@@ -22,12 +22,26 @@ transTgGrpUpdate q2tMaps tgUpdate =
     msgs = [message, edited_message] <*> pure tgUpdate
     msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs
 
-handleMsg mtype msgs q2tMaps = (,) targetGrp (
+getMessageFromUpdate :: Update -> (Int, Maybe Message)
+getMessageFromUpdate tgUpdate = (msg_type, msg)
+  where
+    msg = if msg_type > 1 then Nothing else msgs !! msg_type
+    msgs = [message, edited_message] <*> pure tgUpdate
+    msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs
+
+handleMsg :: (Eq a, Num a, Foldable t) =>
+     a
+     -> t (Maybe Message)
+     -> [(b, Integer)]
+     -> (Maybe b, Text)
+handleMsg mtype msgs q2tMaps = (,) targetGrp $
   case mtype of
     -- Common message
     0 -> T.concat [user, "> ", content]
     -- Edited message
-    1 -> T.concat ["[", user, "] edited the following message:\n", content] )
+    1 -> T.concat ["[", user, "] edited the following message:\n", content]
+    -- Make GHC not complain
+    _ -> "WTF"
   where
     content = fromMaybe "" (text msg)
     msg = fromJust $ asum msgs

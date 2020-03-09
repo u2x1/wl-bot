@@ -2,11 +2,9 @@
 import Web.Scotty                as Scotty
 import Network.HTTP.Types                    (status204)
 import Network.Wai.Middleware.RequestLogger
-import Network.Wreq              as Wreq
 import Control.Monad.IO.Class                (liftIO)
 import Control.Exception                     (try, SomeException)
 import Control.Concurrent                    (forkFinally)
-import Data.Maybe                            (fromMaybe)
 import Data.ByteString.Lazy as B
 import Data.Aeson                            (eitherDecode)
 import Core.Type.Telegram.Update as TG
@@ -18,6 +16,7 @@ import Utils.Webhook
 import Plugin.Forwarder
 import Plugin.BaikeQuerier
 
+main :: IO ()
 main = do
   cb <- try $ B.readFile "config.json" :: IO (Either SomeException ByteString)
   case cb of
@@ -29,27 +28,26 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
-  forkFinally (setTelegramWebhook config) (handleExcp "setting webhook" (\_ -> pure ()))
+  _ <- forkFinally (setTelegramWebhook config) handleExcp
   scotty (port config) $ do
     middleware logStdoutDev
     handleTGMsg config
     handleCQMsg config
-
-handleExcp :: String -> (a -> IO ()) -> Either SomeException a -> IO ()
-handleExcp actionName _ (Left excp) = logWT "Error" ("Failed " <> actionName <>": " <> show excp)
-handleExcp _ func (Right _) = pure ()
+  where
+    handleExcp  (Left excp) = logWT "Error" ("Failed setting webhook: " <> show excp)
+    handleExcp  (Right _) = pure ()
 
 handleTGMsg :: Config -> ScottyM ()
 handleTGMsg config =
   Scotty.post (literal "/telegram/") $ do
     update <- jsonData :: ActionM TG.Update
-    liftIO $ fwdTGMsg config update
+    _ <- liftIO $ fwdTGMsg config update
     status status204
 
 handleCQMsg :: Config -> ScottyM ()
 handleCQMsg config =
   Scotty.post (literal "/cq/") $ do
     update <- jsonData :: ActionM CQ.Update
-    liftIO $ fwdQQMsg config update
-    liftIO $ processCQQuery config update
+    _ <- liftIO $ fwdQQMsg config update
+    _ <- liftIO $ processCQQuery config update
     status status204

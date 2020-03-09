@@ -44,6 +44,7 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
+    - -Wall
     - -static
     - -O2
     - -optl-static

@@ -6,8 +6,6 @@ import Core.Type.Telegram.Request
 import Utils.Config
 
 import Data.Text              as T
-import Data.Text.Read
-import Data.Either
 import Data.Maybe
 import Data.Aeson
 
@@ -20,6 +18,7 @@ getImgUrls [] = []
 getText :: [CQMsg] -> Text
 getText msg = go msg 0
   where
+    go :: [CQMsg] -> Int -> Text
     go [] _ = ""
     go (x:cqMsg) picCount = case cqtype x of
       "text"  -> fromJust (CQ.text $ cqdata x)              <> go cqMsg picCount
@@ -41,7 +40,7 @@ getImgRequest q2tMaps cqUpdate = toJSON $ SendMediaGrp <$> targetGrp <*> (pure $
 
 getImgContent :: Update -> [InputMediaPhoto]
 getImgContent cqUpdate =
-  fmap (\url -> InputMediaPhoto "photo" url fwdText "HTML") imgUrls
+  fmap (\photoUrl -> InputMediaPhoto "photo" photoUrl fwdText "HTML") imgUrls
   where
     imgUrls = getImgUrls $ message cqUpdate
     fwdText = case imgUrls of
