@@ -32,16 +32,16 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
    }
    ```
 
-| Key        | Description                          | Example Value            |   |   |
-|------------|--------------------------------------|--------------------------|---|---|
-| admins     | (WIP)                                |                          |   |   |
-| port       | The port this program listen         | 8443                     |   |   |
-| thisServer | This server address used for Webhook | "https://yourserver"     |   |   |
-| cqServer   | CoolQ server address for API calling | "http://localhost:5700"  |   |   |
-| tgbotToken | Token for Telegram Bot API           |                          |   |   |
-| forwardOn  | Forward between groups if true       | true                     |   |   |
-| groups     | Groups need to be linked             | [[124234231, -12514514]] |   |   |
-| searchOn   | Search Baike using "/qr " if true    | false                    |   |   |
+| Key        | Description                          | Example Value            |
+|------------|--------------------------------------|--------------------------|
+| admins     | (WIP)                                |                          |
+| port       | The port this program listen         | 8443                     |
+| thisServer | This server address used for Webhook | "https://yourserver"     |
+| cqServer   | CoolQ server address for API calling | "http://localhost:5700"  |
+| tgbotToken | Token for Telegram Bot API           |                          |
+| forwardOn  | Forward between groups if true       | true                     |
+| groups     | Groups need to be linked             | [[124234231, -12514514]] |
+| searchOn   | Search Baike using "/qr " if true    | false                    |
 
 
 3. Enable Coolq **Http API** plugin, set the config of the plugin:

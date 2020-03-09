@@ -5,16 +5,13 @@ import Network.Wreq
 import Data.Aeson
 import Data.ByteString.Lazy
 import Control.Concurrent
-import Control.Concurrent.Lock
 import Control.Exception.Base
 
-postTgRequest :: Lock -> String -> String -> Value -> IO ThreadId
-postTgRequest = ((.).(.).(.).(.)) forkIO postTgRequestSync
+import Utils.Logging
 
-postTgRequestSync :: Lock -> String -> String -> Value -> IO ()
-postTgRequestSync lock tgbotTk method jsonContent = do
-  acquire lock
-  try (post target jsonContent) :: IO (Either SomeException (Response ByteString))
-  release lock
+postTgRequest :: String -> String -> Value -> IO ThreadId
+postTgRequest tgbotTk method jsonContent = forkFinally (post target jsonContent) handleExcp
   where
+    handle (Left _) = logWT "ERROR" "Failed to post requests to Telegram."
+    handleExcp (Right _) =  pure ()
     target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method

@@ -8,7 +8,6 @@ copyright:           "2019-2020 Nutr1t07"
 
 extra-source-files:
 - README.md
-- ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -21,7 +20,6 @@ description:         A bot used to forward messages between Telegram and QQ.
 
 dependencies:
 - base >= 4.7 && < 5
-- concurrent-extra
 - network
 - containers
 - aeson
@@ -36,6 +34,7 @@ dependencies:
 - time
 - scotty
 - stringsearch
+- utf8-string
 
 library:
   source-dirs: src
@@ -47,9 +46,7 @@ executables:
     ghc-options:
     - -static
     - -O2
-      #    - -threaded
-    cc-options: -static
-    ld-options: -static -pthread
+    - -optl-static
     dependencies:
     - wl-bot
 

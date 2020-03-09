@@ -4,7 +4,6 @@ import Network.HTTP.Types                    (status204)
 import Network.Wai.Middleware.RequestLogger
 import Network.Wreq              as Wreq
 import Control.Monad.IO.Class                (liftIO)
-import Control.Concurrent.Lock
 import Control.Exception                     (try, SomeException)
 import Control.Concurrent                    (forkFinally)
 import Data.Maybe                            (fromMaybe)
@@ -17,7 +16,7 @@ import Utils.Logging
 import Utils.Webhook
 
 import Plugin.Forwarder
-import Plugin.BaikeSearcher
+import Plugin.BaikeQuerier
 
 main = do
   cb <- try $ B.readFile "config.json" :: IO (Either SomeException ByteString)
@@ -30,26 +29,27 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
-  try $ setTelegramWebhook config :: IO (Either SomeException (Response ByteString))
-  tgLock <- new :: IO Lock
-  cqLock <- new :: IO Lock
+  forkFinally (setTelegramWebhook config) (handleExcp "setting webhook" (\_ -> pure ()))
   scotty (port config) $ do
     middleware logStdoutDev
-    handleTGMsg config cqLock
-    handleCQMsg config cqLock
+    handleTGMsg config
+    handleCQMsg config
 
+handleExcp :: String -> (a -> IO ()) -> Either SomeException a -> IO ()
+handleExcp actionName _ (Left excp) = logWT "Error" ("Failed " <> actionName <>": " <> show excp)
+handleExcp _ func (Right _) = pure ()
 
-handleTGMsg :: Config -> Lock -> ScottyM ()
-handleTGMsg config lock =
+handleTGMsg :: Config -> ScottyM ()
+handleTGMsg config =
   Scotty.post (literal "/telegram/") $ do
     update <- jsonData :: ActionM TG.Update
-    liftIO $ fwdTGMsg lock config update
+    liftIO $ fwdTGMsg config update
     status status204
 
-handleCQMsg :: Config -> Lock -> ScottyM ()
-handleCQMsg config lock =
+handleCQMsg :: Config -> ScottyM ()
+handleCQMsg config =
   Scotty.post (literal "/cq/") $ do
     update <- jsonData :: ActionM CQ.Update
-    liftIO $ fwdQQMsg lock config update
-    liftIO $ processCQQuery lock config update
+    liftIO $ fwdQQMsg config update
+    liftIO $ processCQQuery config update
     status status204
