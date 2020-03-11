@@ -16,7 +16,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         A bot used to forward messages between Telegram and QQ.
+description:         This is a program used to provide tools for QQ and Telegram groups.
 
 dependencies:
 - base >= 4.7 && < 5
@@ -47,7 +47,11 @@ executables:
     - -Wall
     - -static
     - -O2
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     - -optl-static
+    - -fPIC
     dependencies:
     - wl-bot
 
