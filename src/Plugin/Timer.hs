@@ -28,7 +28,7 @@ addTimer countdown userId = do
   if snd (Text.breakOn (Text.pack $ show userId) timers) == ""
      then do
        nowTime <- getCurrentTime
-       let recordTime = Text.pack $ formatTime defaultTimeLocale timeFormat $ addUTCTime (countdown*60) nowTime
+       let recordTime = Text.pack $ formatTime defaultTimeLocale timeFormat $ addUTCTime countdown nowTime
        _ <- Text.appendFile "timers.txt" (recordTime <> " " <> Text.pack (show userId) <> "\n")
        pure $ Just ()
      else pure Nothing
@@ -36,12 +36,8 @@ addTimer countdown userId = do
 checkTimer :: Config -> IO ()
 checkTimer config = do
   users <- rmTimeOutUser
-  _ <- traverse (\userId -> sendPrivMsg userId "Alarm done." config) users
-  fileContent <- Text.readFile "timers.txt"
-  if fileContent /= "\n"
-     -- Check every one minute
-     then threadDelay 60000000 >> checkTimer config
-     else pure ()
+  _ <- traverse (\userId -> sendPrivMsg userId "Time's up." config) users
+  threadDelay 60000000 >> checkTimer config
 
 processTimerOp :: Config -> CQ.Update -> IO (Maybe RespBS)
 processTimerOp config cqUpdate =
@@ -53,11 +49,21 @@ processTimerOp config cqUpdate =
           if content /= "" && isRight (decimal content)
              then do
                timers <- Text.readFile "timers.txt"
-               let alarmTime = fromIntegral (fromRight 0 $ fst <$> decimal content::Int)
-               _ <- addTimer alarmTime (fromJust userId)
+               let alarmTime = 60 * fromIntegral (fromRight 0 $ fst <$> decimal content::Int)
+               timerState <- addTimer alarmTime (fromJust userId)
+               case timerState of
+                 Just _ -> logWT Info ("Pomodoro set from " <> show userId) >> Just <$> sendBackTextMsg (Text.pack $ show alarmTime <> " alarm is set up.") cqUpdate config
+                 _      -> Just <$> sendBackTextMsg "You're having an on-going task." cqUpdate config
                logWT Info ("Alarm [" <> show alarmTime <>"] set from " <> show userId)
-               Just <$> sendBackTextMsg "Alarm setting done." cqUpdate config
+               Just <$> sendBackTextMsg "The alarm time is up." cqUpdate config
              else Just <$> sendBackTextMsg "Bad format.\nUsage: /al TIME\nTIME uses the unit of minutes." cqUpdate config
+      "/tm" -> do
+        timers <- Text.readFile "timers.txt"
+        timerState <- addTimer 60 (fromJust userId)
+        case timerState of
+          Just _ -> logWT Info ("Pomodoro set from " <> show userId) >> Just <$> sendBackTextMsg "Pomodoro 25 minutes started." cqUpdate config
+          _      -> Just <$> sendBackTextMsg "You're having an on-going task." cqUpdate config
+
       "/cl" -> do
         fileContent <- Text.readFile "timers.txt"
         let timers = Prelude.init $ Text.splitOn "\n" fileContent
