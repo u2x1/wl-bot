@@ -9,6 +9,7 @@ import           Core.Data.CoolQ              as CQ
 import           Core.Data.Telegram           as TG
 
 import           Utils.Config
+import           Utils.Logging
 
 import           Network.Wreq                 as Wreq
 import           Control.Lens
@@ -46,12 +47,13 @@ filterConcatWord oStr = replace "&quot;" ("\""::BL.ByteString) (replace "\n" (""
 
 runBaiduSearch :: String -> IO ByteString
 runBaiduSearch query = do
-  result <- Wreq.getWith opts $ "https://www.baidu.com/s?&wd=" ++ query ++ " site%3Abaike.baidu.com%20&oq=" ++ query ++ " site%253Abaike.baidu.com&ie=utf-8&rqlang=cn&rsv_enter=1"
+  result <- Wreq.getWith opts $ "https://www.baidu.com/s?wd=" ++ query ++ " site%3Abaike.baidu.com%20&ie=utf-8&pn=0&cl=3&rn=100"
 --  BL.writeFile "testing.html" (result ^. responseBody)
   case getFstUrl (result ^. responseBody) of
     Nothing  -> pure "No result found."
     Just realUrl -> do
       realRsp <- Wreq.get realUrl
+      --logWT Debug ("Url: " <> realUrl)
       pure $ filterConcatWord $ getWords $ getFirstPara $ realRsp ^. responseBody
   where
     getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
@@ -66,6 +68,8 @@ processCQQuery config cqUpdate
        then do
          result <- runBaiduSearch $ Text.unpack $ Text.strip (Text.drop 4 msgTxt)
          let resultText = Just (TextL.toStrict $ decodeUtf8 result)
+         logWT Info $
+           "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (fromJust $ user_id cqUpdate)
          Just <$> CQ.sendBackTextMsg (fromMaybe "" resultText) cqUpdate config
        else pure Nothing
 

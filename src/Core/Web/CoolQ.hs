@@ -25,6 +25,6 @@ sendBackTextMsg textToSend cqUpdate config =
 postCqRequest :: String -> String -> Value -> IO ThreadId
 postCqRequest cqSvr method jsonContent = forkFinally (post target jsonContent) handleExcp
     where
-      handleExcp (Left _) = logWT "ERROR" "Failed to post requests to CoolQ."
-      handleExcp (Right _) =  pure ()
+      handleExcp (Left err) = logErr (show err) "Failed to post requests to CoolQ."
+      handleExcp _ = pure ()
       target = cqSvr ++ "/" ++ method

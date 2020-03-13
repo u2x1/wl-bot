@@ -21,13 +21,13 @@ sendBackTextMsg textToSend tgUpdate config =
       msgs = [message, edited_message] <*> pure tgUpdate
       msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs in
   if msg_type < 3
-     then postTgRequest tgbotTk "sendMessage" $ 
+     then postTgRequest tgbotTk "sendMessage" $
             toJSON (SendMsg ((id.chat) $ fromJust $ msgs !! msg_type) textToSend "markdown")
-     else forkIO (logWT "Warning" "Message type not supported")
+     else forkIO (logWT Warning "Message type not supported")
 
 postTgRequest :: String -> String -> Value -> IO ThreadId
 postTgRequest tgbotTk method jsonContent = forkFinally (post target jsonContent) handleExcp
   where
-    handleExcp (Left _) = logWT "ERROR" "Failed to post requests to Telegram."
-    handleExcp (Right _) =  pure ()
+    handleExcp (Left err) = logErr (show err) "Failed to post requests to Telegram"
+    handleExcp _ = pure ()
     target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method
