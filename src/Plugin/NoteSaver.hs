@@ -9,13 +9,15 @@ import Utils.Config
 import Utils.Logging
 
 import Control.Concurrent
+import Data.Maybe
 import Data.Text                 as Text
 import Data.Text.IO              as Text
 
-searchBetween :: Text -> Text -> Text -> Text
+searchBetween :: Text -> Text -> Text -> Maybe Text
 searchBetween left right content =
-  let fstround = snd $ breakOnEnd left content in
-      fst (breakOn right fstround)
+  case breakOnEnd left content of
+    ("",_) -> Nothing
+    (_, fstRound) -> Just $ fst (breakOn right fstRound)
 
 saveNote :: Text -> Text -> IO ()
 saveNote key value = Text.appendFile "notes.txt" ("`{"<>key<>">`"<>value<>"!^\n")
@@ -23,20 +25,21 @@ saveNote key value = Text.appendFile "notes.txt" ("`{"<>key<>">`"<>value<>"!^\n"
 queryNote :: Text -> IO (Maybe Text)
 queryNote key = do
   notes <- Text.readFile "notes.txt"
-  case searchBetween ("`{"<>key<>">`") "!^" notes of
-    "" -> pure Nothing
-    value  -> pure $ Just value
+  pure $ searchBetween ("`{"<>key<>">`") "!^" notes
 
-processNoteOp :: Config -> CQ.Update -> IO (Maybe ThreadId)
+processNoteOp :: Config -> CQ.Update -> IO (Maybe RespBS)
 processNoteOp config cqUpdate =
   let msgTxt = getText (CQ.message cqUpdate) in
     case Text.take 4 msgTxt of
       "/sn " ->
-        if Prelude.length (splitOn " " msgTxt) == 3
+        let content = Text.dropWhile (==' ') (Text.drop 4 msgTxt) in
+        if Text.dropWhile (/=' ') content /= ""
           then do
-            let inputs = splitOn " " msgTxt
-            _ <- saveNote (inputs!!1) (inputs!!2)
-            logWT Info (Text.unpack $ "Note: [" <> (inputs!!1) <> "]" <> (inputs!!2) <> "saved.")
+            let key = Text.takeWhile (/=' ') content
+                value = Text.dropWhile (/=' ') content
+            _ <- saveNote key value
+            logWT Info $
+              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (fromJust (user_id cqUpdate))<>"."
             Just <$> CQ.sendBackTextMsg "Note saved." cqUpdate config
           else pure Nothing
       "/qn " ->

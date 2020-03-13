@@ -1,13 +1,13 @@
 module Plugin.Forwarder where
 
-import Core.Web.Telegram         as TG      (postTgRequest)
-import Core.Web.CoolQ            as CQ      (postCqRequest)
+import Core.Web.Telegram         as TG
+import Core.Web.CoolQ            as CQ
 
-import Core.Type.CoolQ.Update    as CQ      (Update, message)
-import Core.Type.Telegram.Update as TG      (Update)
+import Core.Type.CoolQ.Update    as CQ
+import Core.Type.Telegram.Update as TG
 
-import Core.Data.Telegram        as TG      (transTgGrpUpdate)
-import Core.Data.CoolQ           as CQ      (getImgRequest, getTextRequest, getImgUrls)
+import Core.Data.Telegram        as TG
+import Core.Data.CoolQ           as CQ
 
 import Control.Concurrent
 import Utils.Config
@@ -31,7 +31,7 @@ fwdQQMsg config cqUpdate
            where
              tgReqWithImg = getImgRequest grpMaps cqUpdate
 
-fwdTGMsg :: Config -> TG.Update -> IO (Maybe ThreadId)
+fwdTGMsg :: Config -> TG.Update -> IO (Maybe RespBS)
 fwdTGMsg config tgUpdate
   | not $ forwardOn config = pure Nothing
   | otherwise =

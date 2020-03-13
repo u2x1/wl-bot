@@ -4,18 +4,18 @@ import Network.HTTP.Types                    (status204)
 -- import Network.Wai.Middleware.RequestLogger
 import Control.Monad.IO.Class                (liftIO)
 import Control.Exception                     (try, SomeException)
---import Control.Concurrent                    (forkFinally)
+import Control.Concurrent                    (forkFinally, forkIO)
 import Data.ByteString.Lazy      as BL
 import Data.Aeson                            (eitherDecode)
 import Core.Type.Telegram.Update as TG
 import Core.Type.CoolQ.Update    as CQ
 import Utils.Config
 import Utils.Logging
---import Utils.Webhook
 
 import Plugin.Forwarder
 import Plugin.BaikeQuerier
 import Plugin.NoteSaver
+import Plugin.Timer
 
 main :: IO ()
 main = do
@@ -28,15 +28,11 @@ main = do
     Left err -> logErr (show err) "Failed opening config file"
 
 runServer :: Config -> IO ()
-runServer config = do
---  _ <- forkFinally (setTelegramWebhook config) handleExcp
+runServer config =
   scotty (port config) $ do
 --    middleware logStdoutDev
     handleTGMsg config
     handleCQMsg config
-  where
-    handleExcp (Left excp) = logWT Error ("Failed setting webhook: " <> show excp)
-    handleExcp (Right _) = pure ()
 
 handleTGMsg :: Config -> ScottyM ()
 handleTGMsg config =
@@ -50,7 +46,11 @@ handleCQMsg :: Config -> ScottyM ()
 handleCQMsg config =
   Scotty.post (literal "/cq/") $ do
     update <- jsonData :: ActionM CQ.Update
-    _ <- liftIO $ fwdQQMsg config update
-    _ <- liftIO $ processCQQuery config update
-    _ <- liftIO $ processNoteOp config update
+    _ <- liftIO $ forkFinally (fwdQQMsg config update) handleExcp
+    _ <- liftIO $ forkIO (checkTimer config)
+    _ <- liftIO $ forkFinally (processCQQuery config update) handleExcp
+    _ <- liftIO $ forkFinally (processNoteOp config update) handleExcp
+    _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
     status status204
+  where handleExcp _ = pure ()
+

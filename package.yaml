@@ -35,6 +35,7 @@ dependencies:
 - scotty
 - stringsearch
 - utf8-string
+- transformers
 
 library:
   source-dirs: src

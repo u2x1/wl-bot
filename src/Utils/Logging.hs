@@ -11,7 +11,7 @@ logWT :: LogTag -> String -> IO ()
 logWT logTag msg = do
   _ <- forkIO $ do
     t <- getCurrentTime
-    let nowtime = show $ formatTime defaultTimeLocale "%Y/%m/%d %H:%M" t
+    let nowtime = formatTime defaultTimeLocale "%Y/%m/%d %H:%M" t
     putStrLn $ concat ["[", nowtime, "] ", "[", transTag logTag, "] ", msg]
     hFlush stdout
   pure ()
