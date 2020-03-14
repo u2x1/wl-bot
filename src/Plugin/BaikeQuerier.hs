@@ -3,17 +3,13 @@ module Plugin.BaikeQuerier where
 
 import           Core.Web.CoolQ               as CQ
 import           Core.Web.Telegram            as TG
-import           Core.Type.CoolQ.Update       as CQ
-import           Core.Type.Telegram.Update    as TG
-import           Core.Data.CoolQ              as CQ
-import           Core.Data.Telegram           as TG
+import           Core.Type.Unity.Update
 
 import           Utils.Config
 import           Utils.Logging
 
 import           Network.Wreq                 as Wreq
 import           Control.Lens
-import           Control.Concurrent                    (ThreadId)
 import qualified Data.ByteString              as BS    (ByteString)
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
 import           Data.ByteString.Lazy         as BL
@@ -59,29 +55,26 @@ runBaiduSearch query = do
     getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0"]
 
-processCQQuery :: Config -> CQ.Update -> IO (Maybe RespBS)
-processCQQuery config cqUpdate =
+processCQQuery :: Config -> Update -> IO (Maybe (Response BL.ByteString))
+processCQQuery config update =
   if Text.take 4 msgTxt == "/qr " && Text.replace " " "" msgTxt /= "/qr"
     then do
       result <- runBaiduSearch $ Text.unpack $ Text.strip (Text.drop 4 msgTxt)
       let resultText = Just (TextL.toStrict $ decodeUtf8 result)
       logWT Info $
-        "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (fromJust $ user_id cqUpdate)
-      Just <$> CQ.sendBackTextMsg (fromMaybe "" resultText) cqUpdate config
+        "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (user_id update)
+      Just <$> CQ.sendBackTextMsg (fromMaybe "" resultText) update config
     else pure Nothing
     where
-      msgTxt = getText (CQ.message cqUpdate)
+      msgTxt = message_text update
 
-processTGQuery :: Config -> TG.Update -> IO (Maybe ThreadId)
-processTGQuery config tgUpdate =
+processTGQuery :: Config -> Update -> IO (Maybe (Response BL.ByteString))
+processTGQuery config update =
   if Text.take 4 msgTxt == "/qr " && Text.replace " " "" msgTxt /= "/qr"
     then do
       result <- runBaiduSearch $ Text.unpack $ Text.strip (Text.drop 4 msgTxt)
       let resultText = Just (TextL.toStrict $ decodeUtf8 result)
-      Just <$> TG.sendBackTextMsg (fromMaybe "" resultText) tgUpdate config
+      Just <$> TG.sendBackTextMsg (fromMaybe "" resultText) update config
     else pure Nothing
     where
-      msgTxt =
-          case snd $ TG.getMessageFromUpdate tgUpdate of
-            Just msg -> fromMaybe "" (TG.text msg)
-            _        -> ""
+      msgTxt = message_text update

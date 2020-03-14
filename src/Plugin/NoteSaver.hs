@@ -2,16 +2,15 @@
 module Plugin.NoteSaver where
 
 import           Core.Web.CoolQ               as CQ
-import           Core.Type.CoolQ.Update       as CQ
-import           Core.Data.CoolQ              as CQ
+import           Core.Type.Unity.Update
 
 import Utils.Config
 import Utils.Logging
 
-import Control.Concurrent
-import Data.Maybe
+import Network.Wreq
 import Data.Text                 as Text
 import Data.Text.IO              as Text
+import Data.ByteString.Lazy
 
 searchBetween :: Text -> Text -> Text -> Maybe Text
 searchBetween left right content =
@@ -27,9 +26,9 @@ queryNote key = do
   notes <- Text.readFile "notes.txt"
   pure $ searchBetween ("`{"<>key<>">`") "!^" notes
 
-processNoteOp :: Config -> CQ.Update -> IO (Maybe RespBS)
+processNoteOp :: Config -> Update -> IO (Maybe (Response ByteString))
 processNoteOp config cqUpdate =
-  let msgTxt = getText (CQ.message cqUpdate) in
+  let msgTxt = message_text cqUpdate in
     case Text.take 4 msgTxt of
       "/sn " ->
         let content = Text.dropWhile (==' ') (Text.drop 4 msgTxt) in
@@ -39,7 +38,7 @@ processNoteOp config cqUpdate =
                 value = Text.dropWhile (/=' ') content
             _ <- saveNote key value
             logWT Info $
-              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (fromJust (user_id cqUpdate))<>"."
+              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id cqUpdate)<>"."
             Just <$> CQ.sendBackTextMsg "Note saved." cqUpdate config
           else pure Nothing
       "/qn " ->

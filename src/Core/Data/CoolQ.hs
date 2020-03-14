@@ -29,8 +29,8 @@ getTextRequest :: GroupMap -> Update -> Value
 getTextRequest q2tMaps cqUpdate =
    toJSON $ SendMsg <$> targetGrp <*> pure fwdText <*> Just "HTML"
    where
-     fwdText   = T.concat ["<b>", username, "</b>&gt; ", getText (message cqUpdate)]
-     username  = nickname (sender cqUpdate)
+     fwdText   = T.concat ["<b>", fromMaybe "" username, "</b>&gt; ", getText (message cqUpdate)]
+     username  = nickname <$> sender cqUpdate
      targetGrp = group_id cqUpdate >>= flip lookup q2tMaps
 
 getImgRequest :: GroupMap -> Update -> Value
@@ -45,7 +45,7 @@ getImgContent cqUpdate =
     imgUrls = getImgUrls $ message cqUpdate
     fwdText = case imgUrls of
                 -- If there is only one photo in a message, hide "[P0]"
-                _:[] -> T.concat ["[<b>", username,  "</b>]"]
-                _    -> T.concat ["<b>", username, "</b>&gt; ", getText (message cqUpdate)]
+                _:[] -> T.concat ["[<b>", fromMaybe "" username,  "</b>]"]
+                _    -> T.concat ["<b>", fromMaybe "" username, "</b>&gt; ", getText (message cqUpdate)]
                 where
-                  username  = nickname (sender cqUpdate)
+                  username  = nickname <$> sender cqUpdate

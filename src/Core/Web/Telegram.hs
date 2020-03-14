@@ -4,30 +4,22 @@ module Core.Web.Telegram where
 import Network.Wreq
 import Data.Aeson
 import Data.Text
-import Data.Maybe
-import Control.Concurrent
+import Data.ByteString.Lazy
 
-import Core.Type.Telegram.Update
+import Core.Type.Unity.Update
 import Core.Type.Telegram.Request
 
 import Utils.Config
-import Utils.Logging
 
 import Prelude hiding (id)
 
-sendBackTextMsg :: Text -> Update -> Config -> IO ThreadId
-sendBackTextMsg textToSend tgUpdate config =
-  let tgbotTk = tgbotToken config
-      msgs = [message, edited_message] <*> pure tgUpdate
-      msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs in
-  if msg_type < 3
-     then postTgRequest tgbotTk "sendMessage" $
-            toJSON (SendMsg ((id.chat) $ fromJust $ msgs !! msg_type) textToSend "markdown")
-     else forkIO (logWT Warning "Message type not supported")
+sendBackTextMsg :: Text -> Update -> Config -> IO (Response ByteString)
+sendBackTextMsg textToSend update config =
+  postTgRequest tgbotTk "sendMessage" $
+            toJSON (SendMsg (chat_id update) textToSend "markdown")
+  where tgbotTk = tgbotToken config
 
-postTgRequest :: String -> String -> Value -> IO ThreadId
-postTgRequest tgbotTk method jsonContent = forkFinally (post target jsonContent) handleExcp
+postTgRequest :: String -> String -> Value -> IO (Response ByteString)
+postTgRequest tgbotTk method = post target
   where
-    handleExcp (Left err) = logErr (show err) "Failed to post requests to Telegram"
-    handleExcp _ = pure ()
     target = "https://api.telegram.org/bot" ++ tgbotTk ++ "/" ++ method

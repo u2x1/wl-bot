@@ -46,5 +46,5 @@ handleMsg mtype msgs q2tMaps = (,) targetGrp $
     content = fromMaybe "" (text msg)
     msg = fromJust $ asum msgs
     targetGrp = lookup fromGrp (swap <$> q2tMaps)
-    fromGrp = (id.chat) msg
-    user = first_name (from msg)  <> fromMaybe "" ((last_name.from) msg)
+    fromGrp = (chat_id.chat) msg
+    user = user_first_name (from msg)  <> fromMaybe "" ((user_last_name.from) msg)

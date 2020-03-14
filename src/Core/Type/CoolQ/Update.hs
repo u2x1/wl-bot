@@ -8,8 +8,9 @@ import Utils.Json
 
 data Update = Update {
     post_type :: Text
+  , message_id :: Maybe Integer
   , message_type :: Text
-  , sender :: Sender
+  , sender :: Maybe Sender
   , group_id :: Maybe Integer
   , user_id :: Maybe Integer
   , message :: [CQMsg]
