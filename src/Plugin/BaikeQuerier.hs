@@ -54,20 +54,17 @@ runBaiduSearch query = do
     getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0"]
 
-processQuery :: Update -> IO [SendMsg]
-processQuery update =
-  if Text.take 3 msgTxt == "/qr"
-    then
-      if Text.replace " " "" msgTxt /= "/qr"
-        then do
-          result <- runBaiduSearch $ Text.unpack $ Text.strip (Text.drop 3 msgTxt)
-          logWT Info $
-            "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (user_id update)
-          pure [SendMsg result (UU.chat_id update) (message_type update) (platform update)]
-        else pure [SendMsg badFmt (UU.chat_id update) (message_type update) (platform update)]
-    else pure []
+processQuery :: (Text.Text, Update) -> IO [SendMsg]
+processQuery (cmdBody, update) =
+  if content /= ""
+     then do
+       result <- runBaiduSearch $ Text.unpack content
+       logWT Info $
+         "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
+       pure [SendMsg result (UU.chat_id update) (message_type update) (platform update)]
+     else pure [SendMsg badFmt (UU.chat_id update) (message_type update) (platform update)]
     where
-      msgTxt = message_text update
+      content = Text.strip cmdBody
 
 badFmt :: Text.Text
 badFmt = "Bad format.\nUsage: /qr ENTRYNAME"

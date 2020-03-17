@@ -15,40 +15,37 @@ searchBetween left right content =
     ("",_) -> Nothing
     (_, fstRound) -> Just $ fst (breakOn right fstRound)
 
-saveNote :: Text -> Text -> IO ()
-saveNote key value = Text.appendFile "notes.txt" ("`{"<>key<>">`"<>value<>"!^\n")
+writeNoteFile :: Text -> Text -> IO ()
+writeNoteFile key value = Text.appendFile "notes.txt" ("`{"<>key<>">`"<>value<>"!^\n")
 
-queryNote :: Text -> IO (Maybe Text)
-queryNote key = do
+readNoteFile :: Text -> IO (Maybe Text)
+readNoteFile key = do
   notes <- Text.readFile "notes.txt"
   pure $ searchBetween ("`{"<>key<>">`") "!^" notes
 
-processNoteOp :: Update -> IO [SendMsg]
-processNoteOp update =
-  let msgTxt = message_text update in
-    case Text.take 4 msgTxt of
+queryNote :: (Text, Update) -> IO [SendMsg]
+queryNote (cmdBody, update) =
+  if not $ Text.null content
+     then do
+       note <- readNoteFile content
+       case note of
+         Just n -> pure [SendMsg n (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+         _      -> pure [SendMsg "No note found." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+      else pure []
+  where
+    content = Text.dropWhile (==' ') cmdBody
 
-      -- Saving note.
-      "/sn " ->
-        let content = Text.dropWhile (==' ') (Text.drop 4 msgTxt) in
-        if Text.dropWhile (/=' ') content /= ""
-          then do
-            let key = Text.takeWhile (/=' ') content
-                value = Text.dropWhile (/=' ') content
-            _ <- saveNote key value
-            logWT Info $
-              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id update)<>"."
-            pure [SendMsg "Note saved." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-          else pure []
-
-      -- Query notes.
-      "/qn " ->
-        if Text.replace " " "" msgTxt /= "/qn"
-           then do
-             note <- queryNote (Text.replace " " "" $ Text.drop 4 msgTxt)
-             case note of
-               Just n -> pure [SendMsg n (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-               _      -> pure [SendMsg "No note found." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-            else pure []
-
-      _ -> pure []
+saveNote :: (Text, Update) -> IO [SendMsg]
+saveNote (cmdBody, update) =
+  if content /= ""
+    then do
+      let key = Text.takeWhile (/=' ') content
+          value = Text.dropWhile (/=' ') content
+      _ <- writeNoteFile key value
+      logWT Info $
+        "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id update)<>"."
+      pure [SendMsg "Note saved." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+    else pure []
+  where
+    msgTxt = message_text update
+    content = Text.dropWhile (==' ') cmdBody

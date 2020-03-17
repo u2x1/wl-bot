@@ -15,6 +15,7 @@ import Core.Web.Unity
 import Utils.Config
 import Utils.Logging
 
+import Core.Data.PluginConsole
 import Plugin.BaikeQuerier
 import Plugin.NoteSaver
 import Plugin.Timer
@@ -42,15 +43,10 @@ handleTGMsg config =
     originUpdate <- jsonData :: ActionM TG.Update
     case makeUpdateFromTG originUpdate of
       Just update -> do
-        _ <- liftIO $ forkFinally (processQuery update) handleMsgs
-        _ <- liftIO $ forkFinally (processNoteOp update) handleMsgs
-        _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
+        _ <- liftIO $ forkFinally (commandProcess update) handleMsgs
         status status204
       _           -> status status200
-  where handleExcp _ = pure ()
-        handleMsgs (Right msgs) = do
-          _ <- traverse print msgs
-          void $ traverse (`sendTextMsg` config) msgs
+  where handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
         handleMsgs _  = return ()
 
 handleCQMsg :: Config -> ScottyM ()
@@ -59,12 +55,8 @@ handleCQMsg config =
     originUpdate <- jsonData :: ActionM CQ.Update
     case makeUpdateFromCQ originUpdate of
       Just update -> do
-        _ <- liftIO $ forkIO (checkTimer config)
-        _ <- liftIO $ forkFinally (processQuery update) handleMsgs
-        _ <- liftIO $ forkFinally (processNoteOp update) handleMsgs
-        _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
+        _ <- liftIO $ forkFinally (commandProcess update) handleMsgs
         status status204
       _ -> status status500
-  where handleExcp _ = pure ()
-        handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
+  where handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
         handleMsgs _  = return ()
