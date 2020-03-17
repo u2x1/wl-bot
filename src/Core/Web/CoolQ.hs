@@ -9,14 +9,15 @@ import Data.Maybe
 
 import Core.Type.Unity.Update
 import Core.Type.CoolQ.SendMsg
+import Core.Type.Universal
 
 import Utils.Config
 
 sendBackTextMsg :: Text -> Update -> Config -> IO (Response ByteString)
-sendBackTextMsg textToSend cqUpdate config =
-  if isNothing $ group_id cqUpdate
-     then sendPrivMsg (user_id cqUpdate) textToSend config
-     else sendGrpMsg (fromJust $ group_id cqUpdate) textToSend config
+sendBackTextMsg textToSend update config =
+  case message_type update of
+     Private -> sendPrivMsg (user_id update) textToSend config
+     Group   -> sendGrpMsg (chat_id update) textToSend config
 
 sendPrivMsg :: Integer -> Text -> Config -> IO (Response ByteString)
 sendPrivMsg userId textToSend config =

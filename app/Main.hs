@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Web.Scotty                as Scotty
 import Network.HTTP.Types                    (status204, status500)
--- import Network.Wai.Middleware.RequestLogger
+import Network.Wai.Middleware.RequestLogger
 import Control.Monad.IO.Class                (liftIO)
 import Control.Exception                     (try, SomeException)
 import Control.Concurrent                    (forkFinally, forkIO)
@@ -13,7 +13,6 @@ import Core.Type.CoolQ.Update    as CQ
 import Utils.Config
 import Utils.Logging
 
-import Plugin.Forwarder
 import Plugin.BaikeQuerier
 import Plugin.NoteSaver
 import Plugin.Timer
@@ -31,7 +30,7 @@ main = do
 runServer :: Config -> IO ()
 runServer config =
   scotty (port config) $ do
---    middleware logStdoutDev
+    middleware logStdoutDev
     handleTGMsg config
     handleCQMsg config
 
@@ -41,8 +40,9 @@ handleTGMsg config =
     originUpdate <- jsonData :: ActionM TG.Update
     case makeUpdateFromTG originUpdate of
       Just update -> do
---        _ <- liftIO $ forkFinally (fwdTGMsg config update) handleExcp
         _ <- liftIO $ forkFinally (processTGQuery config update) handleExcp
+        _ <- liftIO $ forkFinally (processNoteOp config update) handleExcp
+        _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
         status status204
       _           -> status status500
   where handleExcp _ = pure ()
@@ -54,11 +54,9 @@ handleCQMsg config =
     case makeUpdateFromCQ originUpdate of
       Just update -> do
         _ <- liftIO $ forkIO (checkTimer config)
---        _ <- liftIO $ forkFinally (fwdQQMsg config update) handleExcp
         _ <- liftIO $ forkFinally (processCQQuery config update) handleExcp
         _ <- liftIO $ forkFinally (processNoteOp config update) handleExcp
         _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
         status status204
       _ -> status status500
   where handleExcp _ = pure ()
-

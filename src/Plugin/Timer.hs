@@ -89,4 +89,3 @@ processTimerOp config cqUpdate =
       Just <$> sendBackTextMsg "Alarm cancelled." cqUpdate config
 
     _ -> pure Nothing
-
