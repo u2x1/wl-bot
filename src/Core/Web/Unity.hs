@@ -18,7 +18,7 @@ sendTextMsg msg config =
     -- Handle Telegram message
     Telegram ->
       postTgRequest (tgbotToken config) "sendMessage" $
-        toJSON (T.SendMsg (U.chat_id msg) (U.text msg) "markdown")
+        toJSON (T.SendMsg (U.chat_id msg) (U.text msg))
 
     -- Handle QQ message
     QQ ->

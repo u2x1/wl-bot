@@ -15,7 +15,7 @@ import Utils.Json
 data SendMsg = SendMsg {
     send_msg_chat_id :: Integer
   , send_msg_text :: Text
-  , send_msg_parse_mode :: String
+--  , send_msg_parse_mode :: String
 --  , send_msg_reply_to_message_id :: Maybe Integer
 } deriving (Eq, Show, Generic)
 

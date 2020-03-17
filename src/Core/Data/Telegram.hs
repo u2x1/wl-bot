@@ -3,8 +3,6 @@
 module Core.Data.Telegram where
 
 import Core.Type.Telegram.Update
-import Core.Type.CoolQ.SendMsg
-import Utils.Config
 
 import Data.Aeson
 import Data.Maybe
@@ -13,14 +11,6 @@ import Data.Foldable (asum)
 import Data.Text            as T
 
 import Prelude hiding (id)
-
-transTgGrpUpdate :: GroupMap -> Update -> Value
-transTgGrpUpdate q2tMaps tgUpdate =
-  toJSON $ SendGrpMsg <$> fst msgInfo <*> pure (snd msgInfo)
-  where
-    msgInfo = handleMsg msg_type msgs q2tMaps
-    msgs = [message, edited_message] <*> pure tgUpdate
-    msg_type = Prelude.length $ Prelude.takeWhile isNothing msgs
 
 getMessageFromUpdate :: Update -> (Int, Maybe Message)
 getMessageFromUpdate tgUpdate = (msg_type, msg)

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Web.Scotty                as Scotty
-import Network.HTTP.Types                    (status204, status500)
+import Network.HTTP.Types                    (status204, status500, status200)
 import Network.Wai.Middleware.RequestLogger
 import Control.Monad.IO.Class                (liftIO)
 import Control.Monad                         (void)
@@ -46,7 +46,7 @@ handleTGMsg config =
         _ <- liftIO $ forkFinally (processNoteOp update) handleMsgs
         _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
         status status204
-      _           -> status status204
+      _           -> status status200
   where handleExcp _ = pure ()
         handleMsgs (Right msgs) = do
           _ <- traverse print msgs

@@ -36,6 +36,8 @@ dependencies:
 - stringsearch
 - utf8-string
 - transformers
+- hspec
+- QuickCheck
 
 library:
   source-dirs: src

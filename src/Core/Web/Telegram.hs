@@ -16,7 +16,7 @@ import Prelude hiding (id)
 sendBackTextMsg :: Text -> Update -> Config -> IO (Response ByteString)
 sendBackTextMsg textToSend update config =
   postTgRequest tgbotTk "sendMessage" $
-            toJSON (SendMsg (chat_id update) textToSend "markdown")
+            toJSON (SendMsg (chat_id update) textToSend)
   where tgbotTk = tgbotToken config
 
 postTgRequest :: String -> String -> Value -> IO (Response ByteString)

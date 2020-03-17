@@ -52,4 +52,3 @@ processNoteOp update =
             else pure []
 
       _ -> pure []
-
