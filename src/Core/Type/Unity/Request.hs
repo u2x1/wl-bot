@@ -9,4 +9,4 @@ data SendMsg = SendMsg {
   , chat_id :: Integer
   , msg_type :: MsgType
   , target_plat :: Platform
-}
+} deriving (Show)

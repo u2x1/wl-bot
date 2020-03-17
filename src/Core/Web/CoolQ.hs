@@ -5,7 +5,6 @@ import Network.Wreq
 import Data.Aeson
 import Data.Text
 import Data.ByteString.Lazy
-import Data.Maybe
 
 import Core.Type.Unity.Update
 import Core.Type.CoolQ.SendMsg

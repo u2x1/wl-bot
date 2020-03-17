@@ -3,6 +3,7 @@ import Web.Scotty                as Scotty
 import Network.HTTP.Types                    (status204, status500)
 import Network.Wai.Middleware.RequestLogger
 import Control.Monad.IO.Class                (liftIO)
+import Control.Monad                         (void)
 import Control.Exception                     (try, SomeException)
 import Control.Concurrent                    (forkFinally, forkIO)
 import Data.ByteString.Lazy      as BL
@@ -10,6 +11,7 @@ import Data.Aeson                            (eitherDecode)
 import Core.Data.Unity
 import Core.Type.Telegram.Update as TG
 import Core.Type.CoolQ.Update    as CQ
+import Core.Web.Unity
 import Utils.Config
 import Utils.Logging
 
@@ -40,12 +42,16 @@ handleTGMsg config =
     originUpdate <- jsonData :: ActionM TG.Update
     case makeUpdateFromTG originUpdate of
       Just update -> do
-        _ <- liftIO $ forkFinally (processTGQuery config update) handleExcp
-        _ <- liftIO $ forkFinally (processNoteOp config update) handleExcp
+        _ <- liftIO $ forkFinally (processQuery update) handleMsgs
+        _ <- liftIO $ forkFinally (processNoteOp update) handleMsgs
         _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
         status status204
-      _           -> status status500
+      _           -> status status204
   where handleExcp _ = pure ()
+        handleMsgs (Right msgs) = do
+          _ <- traverse print msgs
+          void $ traverse (`sendTextMsg` config) msgs
+        handleMsgs _  = return ()
 
 handleCQMsg :: Config -> ScottyM ()
 handleCQMsg config =
@@ -54,9 +60,11 @@ handleCQMsg config =
     case makeUpdateFromCQ originUpdate of
       Just update -> do
         _ <- liftIO $ forkIO (checkTimer config)
-        _ <- liftIO $ forkFinally (processCQQuery config update) handleExcp
-        _ <- liftIO $ forkFinally (processNoteOp config update) handleExcp
+        _ <- liftIO $ forkFinally (processQuery update) handleMsgs
+        _ <- liftIO $ forkFinally (processNoteOp update) handleMsgs
         _ <- liftIO $ forkFinally (processTimerOp config update) handleExcp
         status status204
       _ -> status status500
   where handleExcp _ = pure ()
+        handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
+        handleMsgs _  = return ()

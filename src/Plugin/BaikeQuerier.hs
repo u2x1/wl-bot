@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Plugin.BaikeQuerier where
 
-import           Core.Web.CoolQ               as CQ
-import           Core.Web.Telegram            as TG
-import           Core.Type.Unity.Update
-import           Core.Type.Unity.Request
+import           Core.Web.CoolQ               as Q
+import           Core.Web.Telegram            as T
+import           Core.Type.Unity.Update       as UU
+import           Core.Type.Unity.Request      as UR
 
 import           Utils.Config
 import           Utils.Logging
@@ -56,16 +56,16 @@ runBaiduSearch query = do
     getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0"]
 
-processQuery :: Config -> Update -> IO [SendMsg]
-processQuery config update =
+processQuery :: Update -> IO [SendMsg]
+processQuery update =
   if Text.take 3 msgTxt == "/qr" && Text.replace " " "" msgTxt /= "/qr"
     then do
       result <- runBaiduSearch $ Text.unpack $ Text.strip (Text.drop 3 msgTxt)
       let resultText = Just (TextL.toStrict $ decodeUtf8 result)
       logWT Info $
         "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (user_id update)
-      SendMsg (fromMaybe "" resultText) (chat_id update) (message_type update) (platform update)
-    else pure Nothing
+      pure [SendMsg (fromMaybe "" resultText) (UU.chat_id update) (message_type update) (platform update)]
+    else pure []
     where
       msgTxt = message_text update
 
@@ -77,7 +77,7 @@ processCQQuery config update =
       let resultText = Just (TextL.toStrict $ decodeUtf8 result)
       logWT Info $
         "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (user_id update)
-      Just <$> CQ.sendBackTextMsg (fromMaybe "" resultText) update config
+      Just <$> Q.sendBackTextMsg (fromMaybe "" resultText) update config
     else pure Nothing
     where
       msgTxt = message_text update
@@ -90,7 +90,7 @@ processTGQuery config update =
       let resultText = Just (TextL.toStrict $ decodeUtf8 result)
       logWT Info $
         "Query: [" <> Text.unpack msgTxt <> "] sending from " <> show (user_id update)
-      Just <$> TG.sendBackTextMsg (fromMaybe "" resultText) update config
+      Just <$> T.sendBackTextMsg (fromMaybe "" resultText) update config
     else pure Nothing
     where
       msgTxt = message_text update

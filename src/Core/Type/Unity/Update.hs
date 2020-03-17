@@ -11,5 +11,4 @@ data Update = Update {
   , message_text  :: Text
   , message_type :: MsgType
   , message_id    :: Integer
---  , group_id      :: Maybe Integer
 } deriving (Show)

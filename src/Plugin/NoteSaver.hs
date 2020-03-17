@@ -1,16 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Plugin.NoteSaver where
 
-import           Core.Web.CoolQ               as CQ
-import           Core.Type.Unity.Update
+import           Core.Type.Unity.Update       as UU
+import           Core.Type.Unity.Request      as UR
 
-import Utils.Config
 import Utils.Logging
 
-import Network.Wreq
 import Data.Text                 as Text
 import Data.Text.IO              as Text
-import Data.ByteString.Lazy
 
 searchBetween :: Text -> Text -> Text -> Maybe Text
 searchBetween left right content =
@@ -26,10 +23,12 @@ queryNote key = do
   notes <- Text.readFile "notes.txt"
   pure $ searchBetween ("`{"<>key<>">`") "!^" notes
 
-processNoteOp :: Config -> Update -> IO (Maybe (Response ByteString))
-processNoteOp config cqUpdate =
-  let msgTxt = message_text cqUpdate in
+processNoteOp :: Update -> IO [SendMsg]
+processNoteOp update =
+  let msgTxt = message_text update in
     case Text.take 4 msgTxt of
+
+      -- Saving note.
       "/sn " ->
         let content = Text.dropWhile (==' ') (Text.drop 4 msgTxt) in
         if Text.dropWhile (/=' ') content /= ""
@@ -38,16 +37,19 @@ processNoteOp config cqUpdate =
                 value = Text.dropWhile (/=' ') content
             _ <- saveNote key value
             logWT Info $
-              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id cqUpdate)<>"."
-            Just <$> CQ.sendBackTextMsg "Note saved." cqUpdate config
-          else pure Nothing
+              "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id update)<>"."
+            pure [SendMsg "Note saved." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+          else pure []
+
+      -- Query notes.
       "/qn " ->
         if Text.replace " " "" msgTxt /= "/qn"
            then do
              note <- queryNote (Text.replace " " "" $ Text.drop 4 msgTxt)
              case note of
-               Just n -> Just <$> CQ.sendBackTextMsg n cqUpdate config
-               _      -> Just <$> CQ.sendBackTextMsg "No note found." cqUpdate config
-            else pure Nothing
-      _ -> pure Nothing
+               Just n -> pure [SendMsg n (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+               _      -> pure [SendMsg "No note found." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
+            else pure []
+
+      _ -> pure []
 

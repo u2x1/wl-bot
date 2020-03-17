@@ -7,7 +7,7 @@ import Core.Data.CoolQ           as CQ
 import Core.Type.Universal
 
 makeUpdateFromTG :: TG.Update -> Maybe UN.Update
-makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> userNick  <*> chatId <*> msgTxt <*> msgType <*> msgId
+makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> userNick <*> chatId <*> msgTxt <*> msgType <*> msgId
   where msg     = TG.message tgUpdate
         userId  = TG.user_id         . TG.from <$> msg
         msgId   = TG.message_id                <$> msg

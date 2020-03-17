@@ -47,9 +47,9 @@ executables:
     ghc-options:
     - -O2
     - -Wall
-    - -static
-    - -optl-static
-    - -fPIC
+      # - -static
+      # - -optl-static
+      # - -fPIC
     dependencies:
     - wl-bot
 
