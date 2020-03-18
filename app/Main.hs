@@ -3,22 +3,17 @@ import Web.Scotty                as Scotty
 import Network.HTTP.Types                    (status204, status500, status200)
 import Network.Wai.Middleware.RequestLogger
 import Control.Monad.IO.Class                (liftIO)
-import Control.Monad                         (void)
 import Control.Exception                     (try, SomeException)
-import Control.Concurrent                    (forkFinally, forkIO)
+import Control.Concurrent                    (forkIO)
 import Data.ByteString.Lazy      as BL
 import Data.Aeson                            (eitherDecode)
 import Core.Data.Unity
 import Core.Type.Telegram.Update as TG
 import Core.Type.CoolQ.Update    as CQ
-import Core.Web.Unity
 import Utils.Config
 import Utils.Logging
 
-import Core.Data.PluginConsole
-import Plugin.BaikeQuerier
-import Plugin.NoteSaver
-import Plugin.Timer
+import Core.Plugin.Console
 
 main :: IO ()
 main = do
@@ -31,9 +26,10 @@ main = do
     Left err -> logErr (show err) "Failed opening config file"
 
 runServer :: Config -> IO ()
-runServer config =
+runServer config = do
+  _ <- liftIO $ forkIO (checkPluginEvents config)
   scotty (port config) $ do
-    middleware logStdoutDev
+--    middleware logStdoutDev
     handleTGMsg config
     handleCQMsg config
 
@@ -43,11 +39,9 @@ handleTGMsg config =
     originUpdate <- jsonData :: ActionM TG.Update
     case makeUpdateFromTG originUpdate of
       Just update -> do
-        _ <- liftIO $ forkFinally (commandProcess update) handleMsgs
+        _ <- liftIO $ forkIO (commandProcess update config)
         status status204
-      _           -> status status200
-  where handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
-        handleMsgs _  = return ()
+      Nothing     -> status status200
 
 handleCQMsg :: Config -> ScottyM ()
 handleCQMsg config =
@@ -55,8 +49,6 @@ handleCQMsg config =
     originUpdate <- jsonData :: ActionM CQ.Update
     case makeUpdateFromCQ originUpdate of
       Just update -> do
-        _ <- liftIO $ forkFinally (commandProcess update) handleMsgs
+        _ <- liftIO $ forkIO (commandProcess update config)
         status status204
-      _ -> status status500
-  where handleMsgs (Right msgs) = void $ traverse (`sendTextMsg` config) msgs
-        handleMsgs _  = return ()
+      Nothing -> status status500

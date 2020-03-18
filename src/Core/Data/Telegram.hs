@@ -4,7 +4,6 @@ module Core.Data.Telegram where
 
 import Core.Type.Telegram.Update
 
-import Data.Aeson
 import Data.Maybe
 import Data.Tuple
 import Data.Foldable (asum)

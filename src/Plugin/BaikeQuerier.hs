@@ -9,13 +9,12 @@ import           Utils.Logging
 import           Network.Wreq
 import           Control.Lens
 import qualified Data.ByteString              as BS    (ByteString)
-import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString, fromString)
+import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
 import           Data.ByteString.Lazy         as BL
 import           Data.ByteString.Lazy.Search           (breakOn, breakAfter, replace)
 import qualified Data.Text                    as Text
 import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
-import           Data.Maybe
 
 searchBetween :: BS.ByteString -> BS.ByteString -> ByteString -> ByteString
 searchBetween left right content =

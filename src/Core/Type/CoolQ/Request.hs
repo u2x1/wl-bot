@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Core.Type.CoolQ.SendMsg where
+module Core.Type.CoolQ.Request where
 
 import Data.Aeson
 import Data.Text (Text)

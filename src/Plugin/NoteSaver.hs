@@ -47,5 +47,4 @@ saveNote (cmdBody, update) =
       pure [SendMsg "Note saved." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
     else pure []
   where
-    msgTxt = message_text update
     content = Text.dropWhile (==' ') cmdBody

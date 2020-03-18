@@ -2,3 +2,4 @@
 wl-bot.cabal
 *~
 config.json
+test/serverTests.sh
