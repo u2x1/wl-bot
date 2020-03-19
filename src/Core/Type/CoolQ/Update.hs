@@ -7,8 +7,7 @@ import GHC.Generics
 import Utils.Json
 
 data Update = Update {
-    post_type :: Text
-  , message_id :: Maybe Integer
+    message_id :: Maybe Integer
   , message_type :: String
   , sender :: Maybe Sender
   , group_id :: Maybe Integer

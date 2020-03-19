@@ -30,11 +30,13 @@ makeUpdateFromCQ :: Q.Update -> Maybe UN.Update
 makeUpdateFromCQ cqUpdate = UN.Update <$> Just QQ <*> userId <*> userNick <*> chatId <*> pure msgTxt <*> msgType <*> msgId
   where userId   = Q.user_id                    cqUpdate
         msgId    = Q.message_id                 cqUpdate
-        chatId   = Q.group_id                   cqUpdate
         userNick = Q.nickname <$> Q.sender      cqUpdate
         msgTxt   = Q.getText   .  Q.message   $ cqUpdate
+        chatId   = case Q.group_id                   cqUpdate of
+                     Nothing -> userId
+                     grpid   -> grpid
         msgType  = case Q.message_type cqUpdate of
-                     "friend" -> Just Private
+                     "private" -> Just Private
                      "group"  -> Just Group
                      "discuss"-> Just Group
                      _        -> Nothing

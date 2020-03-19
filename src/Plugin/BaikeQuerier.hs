@@ -66,5 +66,5 @@ processQuery (cmdBody, update) =
       content = Text.strip cmdBody
 
 baikeHelps :: Text.Text
-baikeHelps = "==BaikeQuerier==\n\
+baikeHelps = "====BaikeQuerier====\n\
              \/bkqr ENTRYNAME: Query an entry from baike.baidu.com"

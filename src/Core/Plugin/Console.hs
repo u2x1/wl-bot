@@ -56,7 +56,7 @@ checkPluginEvents config = forever $ do
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (_, update) = do
-  let helps = (mconcat.intersperse "\n")
+  let helps = (mconcat.intersperse "\n\n")
                  [ baikeHelps
                  , noteHelps
                  , timerHelps

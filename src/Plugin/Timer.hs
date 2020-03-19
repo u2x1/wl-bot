@@ -89,7 +89,7 @@ cancelTimer (_, update) = do
   pure [makeReqFromUpdate update "Timer cancelled."]
 
 timerHelps :: Text.Text
-timerHelps = "==Timer==\n\
+timerHelps = "====Timer====\n\
              \/timer TIME: Set a timer.(TIME uses the unit of minutes)\n\
              \/cxltimer: Cancel an already set timer.\n\
              \/pd: A shorter version of \"timer 25\", \"pd\"stands for Pomodoro."
