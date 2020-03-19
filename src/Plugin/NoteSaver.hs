@@ -48,3 +48,8 @@ saveNote (cmdBody, update) =
     else pure []
   where
     content = Text.dropWhile (==' ') cmdBody
+
+noteHelps :: Text.Text
+noteHelps = "==NoteSaver==\n\
+            \/svnote NAME CONTENT: Save a note to cloud.\n\
+            \/note NAME: Query an existing note."

@@ -2,9 +2,11 @@
 module Core.Plugin.Console where
 
 import qualified Data.Text as Text
+import           Data.List
 import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
 import           Core.Web.Unity
+import           Core.Data.Unity
 
 import           Control.Concurrent
 import           Control.Monad
@@ -17,13 +19,17 @@ import           Plugin.Timer
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
-  case cmdHeader of
-    "/qr" -> processQuery
-    "/sn" -> saveNote
-    "/qn" -> queryNote
-    "/al" -> addTimer
-    "/cl" -> cancelTimer
+  case Text.toLower cmdHeader of
+    "/bkqr" -> processQuery
+
+    "/svnote" -> saveNote
+    "/note" -> queryNote
+
+    "/timer" -> addTimer
+    "/cxltimer" -> cancelTimer
     "/pd" -> setPomodoro
+
+    "/help" -> getCommandHelps
     _     -> pure $ pure []
 
 getMsgs2Send :: Update -> IO [SendMsg]
@@ -46,3 +52,13 @@ checkPluginEvents config = forever $ do
   msgs <- checkTimer
   void $ traverse (`sendTextMsg` config) msgs
   threadDelay 60000000
+
+
+getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
+getCommandHelps (_, update) = do
+  let helps = (mconcat.intersperse "\n")
+                 [ baikeHelps
+                 , noteHelps
+                 , timerHelps
+                 ]
+  pure [makeReqFromUpdate update helps]

@@ -61,9 +61,10 @@ processQuery (cmdBody, update) =
        logWT Info $
          "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
        pure [SendMsg result (UU.chat_id update) (message_type update) (platform update)]
-     else pure [SendMsg badFmt (UU.chat_id update) (message_type update) (platform update)]
+     else pure [SendMsg baikeHelps (UU.chat_id update) (message_type update) (platform update)]
     where
       content = Text.strip cmdBody
 
-badFmt :: Text.Text
-badFmt = "Bad format.\nUsage: /qr ENTRYNAME"
+baikeHelps :: Text.Text
+baikeHelps = "==BaikeQuerier==\n\
+             \/bkqr ENTRYNAME: Query an entry from baike.baidu.com"

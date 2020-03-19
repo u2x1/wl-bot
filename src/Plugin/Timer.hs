@@ -53,7 +53,7 @@ rmTimeOutUser = do
                                    case plat of
                                      "Telegram" -> Telegram
                                      "QQ" -> QQ
-                                     _    -> QQ)
+                                     _    -> error "Unrecognized platform.")
          else pure $ Left (time <> " " <> userId <> " " <> plat)
     checkIfTimesOut _ = pure $ Left ""
 
@@ -67,8 +67,7 @@ addTimer (cmdBody, update) =
             Just _ -> logWT Info ("Timer ["<>show alarmTime<>"] set from " <> show (user_id update)) >>
               pure [makeReqFromUpdate update (Text.pack$show alarmTime<>" timer set.")]
             _      -> pure [makeReqFromUpdate update "You're having an on-going task."]
-        else pure [makeReqFromUpdate update
-          "Bad format.\nUsage: /al TIME\nTIME uses the unit of minutes."]
+        else pure [makeReqFromUpdate update timerHelps]
       where
         content = Text.strip cmdBody
 
@@ -87,4 +86,10 @@ cancelTimer (_, update) = do
       afterRmTimers =
         filter (\timer -> snd (Text.breakOn (Text.pack $ show (user_id update)) timer) == "") timers
   _ <- Text.writeFile "timers.txt" $ (mconcat.intersperse "\n") afterRmTimers
-  pure [makeReqFromUpdate update "Alarm cancelled."]
+  pure [makeReqFromUpdate update "Timer cancelled."]
+
+timerHelps :: Text.Text
+timerHelps = "==Timer==\n\
+             \/timer TIME: Set a timer.(TIME uses the unit of minutes)\n\
+             \/cxltimer: Cancel an already set timer.\n\
+             \/pd: A shorter version of \"timer 25\", \"pd\"stands for Pomodoro."
