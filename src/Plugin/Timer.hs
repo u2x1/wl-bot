@@ -40,13 +40,12 @@ checkTimer = do
 rmTimeOutUser :: IO [(Integer, Platform)]
 rmTimeOutUser = do
   fileContent <- Text.readFile "timers.txt"
-  let timers = map (Text.splitOn " ") (init $ Text.splitOn "\n" fileContent)
+  let timers = map (Text.splitOn " ") (Text.splitOn "\n" fileContent)
   timerList <- traverse checkIfTimesOut timers
   _ <- Text.writeFile "timers.txt" $ (mconcat.intersperse "\n") (lefts timerList)
   pure $ rights timerList
   where
     checkIfTimesOut [time, userId, plat] = do
-      logWT Info $ show [time, userId, plat]
       nowTime <- getCurrentTime
       if nowTime > readCusTime (Text.unpack time)
          then pure $ Right (fromRight 1 $ fst <$> decimal userId,
