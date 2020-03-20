@@ -16,6 +16,7 @@ import           Utils.Config
 import           Plugin.BaikeQuerier
 import           Plugin.NoteSaver
 import           Plugin.Timer
+import           Plugin.DiceHelper
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
@@ -28,6 +29,8 @@ getHandler cmdHeader =
     "/timer" -> addTimer
     "/cxltimer" -> cancelTimer
     "/pd" -> setPomodoro
+
+    "/dc" -> processDiceRolling
 
     "/help" -> getCommandHelps
     _     -> pure $ pure []
@@ -60,5 +63,6 @@ getCommandHelps (_, update) = do
                  [ baikeHelps
                  , noteHelps
                  , timerHelps
+                 , diceHelps
                  ]
   pure [makeReqFromUpdate update helps]

@@ -38,6 +38,8 @@ dependencies:
 - transformers
 - hspec
 - QuickCheck
+- random
+- uri-encode
 
 library:
   source-dirs: src

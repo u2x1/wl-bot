@@ -3,10 +3,12 @@ module Plugin.BaikeQuerier where
 
 import           Core.Type.Unity.Update       as UU
 import           Core.Type.Unity.Request      as UR
+import           Core.Data.Unity
 
 import           Utils.Logging
 
 import           Network.Wreq
+import           Network.URI.Encode
 import           Control.Lens
 import qualified Data.ByteString              as BS    (ByteString)
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
@@ -42,16 +44,16 @@ runBaiduSearch :: String -> IO Text.Text
 runBaiduSearch query = do
   result <- getWith opts $ "https://www.baidu.com/s?wd=" ++ query ++ " site%3Abaike.baidu.com%20&ie=utf-8&pn=0&cl=3&rn=100"
   case getFstUrl (result ^. responseBody) of
-    Nothing      -> pure "No result found."
+    Nothing      -> pure "无结果。"
     Just realUrl -> do
       realRsp <- get realUrl
       case concatWord $ getWords $ getFirstPara $ realRsp ^. responseBody of
         "" -> pure (Text.pack $
-                     "An entry is found for you, but it doesn't have a summary. Check this: " <> realUrl)
+                     "已为您找到一个词条，但此词条无摘要。查看此处: " <> encode realUrl)
         resultText  -> pure $ TextL.toStrict $ decodeUtf8 resultText
   where
     getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
-    opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0"]
+    opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]
 
 processQuery :: (Text.Text, Update) -> IO [SendMsg]
 processQuery (cmdBody, update) =
@@ -60,11 +62,11 @@ processQuery (cmdBody, update) =
        result <- runBaiduSearch $ Text.unpack content
        logWT Info $
          "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
-       pure [SendMsg result (UU.chat_id update) (message_type update) (platform update)]
-     else pure [SendMsg baikeHelps (UU.chat_id update) (message_type update) (platform update)]
+       pure [makeReqFromUpdate update result]
+     else pure [makeReqFromUpdate update baikeHelps]
     where
       content = Text.strip cmdBody
 
 baikeHelps :: Text.Text
-baikeHelps = "====BaikeQuerier====\n\
-             \/bkqr ENTRYNAME: Query an entry from baike.baidu.com"
+baikeHelps = Text.unlines [ "====BaikeQuerier===="
+                          , "/bkqr ENTRYNAME: 从baike.baidu.com查询词条"]

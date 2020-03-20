@@ -4,10 +4,11 @@ module Plugin.NoteSaver where
 import           Core.Type.Unity.Update       as UU
 import           Core.Type.Unity.Request      as UR
 
-import Utils.Logging
+import           Core.Data.Unity
+import           Utils.Logging
 
-import Data.Text                 as Text
-import Data.Text.IO              as Text
+import           Data.Text                    as Text
+import           Data.Text.IO                 as Text
 
 searchBetween :: Text -> Text -> Text -> Maybe Text
 searchBetween left right content =
@@ -29,11 +30,11 @@ queryNote (cmdBody, update) =
      then do
        note <- readNoteFile content
        case note of
-         Just n -> pure [SendMsg n (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-         _      -> pure [SendMsg "No note found." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-      else pure []
+         Just n -> pure [makeReqFromUpdate update n]
+         _      -> pure [makeReqFromUpdate update "未找到指定笔记。"]
+      else pure [makeReqFromUpdate update noteHelps]
   where
-    content = Text.dropWhile (==' ') cmdBody
+    content = Text.strip cmdBody
 
 saveNote :: (Text, Update) -> IO [SendMsg]
 saveNote (cmdBody, update) =
@@ -44,12 +45,12 @@ saveNote (cmdBody, update) =
       _ <- writeNoteFile key value
       logWT Info $
         "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id update)<>"."
-      pure [SendMsg "Note saved." (UU.chat_id update) (UU.message_type update) (UU.platform update)]
-    else pure []
+      pure [makeReqFromUpdate update "笔记已保存。"]
+    else pure [makeReqFromUpdate update noteHelps]
   where
-    content = Text.dropWhile (==' ') cmdBody
+    content = Text.strip cmdBody
 
 noteHelps :: Text.Text
-noteHelps = "====NoteSaver====\n\
-            \/svnote NAME CONTENT: Save a note to cloud.\n\
-            \/note NAME: Query an existing note."
+noteHelps = Text.unlines [ "====NoteSaver===="
+                         , "/svnote NAME CONTENT: 将笔记保存到服务器"
+                         , "/note NAME: 查询一条存在的笔记"]
