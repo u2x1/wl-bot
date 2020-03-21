@@ -9,8 +9,8 @@ import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
 makeReqFromUpdate :: UN.Update -> Text.Text -> UR.SendMsg
-makeReqFromUpdate update txt =
-  UR.SendMsg txt (UN.chat_id update) (UN.message_type update) (UN.platform update)
+makeReqFromUpdate update =
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update)
 
 makeUpdateFromTG :: T.Update -> Maybe UN.Update
 makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> userNick <*> chatId <*> msgTxt <*> msgType <*> msgId

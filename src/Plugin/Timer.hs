@@ -35,7 +35,7 @@ saveTimer2File countdown userId plat = do
 checkTimer :: IO [SendMsg]
 checkTimer = do
   usersWithPlat <- rmTimeOutUser
-  pure $ (\(userId, plat) -> SendMsg "时间到。" userId Private plat) <$> usersWithPlat
+  pure $ (\(userId, plat) -> SendMsg userId Private plat "时间到。") <$> usersWithPlat
 
 rmTimeOutUser :: IO [(Integer, Platform)]
 rmTimeOutUser = do

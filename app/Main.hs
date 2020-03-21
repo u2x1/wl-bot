@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Web.Scotty                as Scotty
 import           Network.HTTP.Types                    (status204, status500, status200)
---import Network.Wai.Middleware.RequestLogger
+--import           Network.Wai.Middleware.RequestLogger
 import           Control.Monad.IO.Class                (liftIO)
 import           Control.Exception                     (try, SomeException)
 import           Control.Concurrent                    (forkIO)
@@ -27,7 +27,8 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
-  _ <- liftIO $ forkIO (checkPluginEvents config)
+  _ <- liftIO $ forkIO (checkPluginEventsIn1 config)
+  _ <- liftIO $ forkIO (checkPluginEventsIn10 config)
   scotty (port config) $ do
 --    middleware logStdoutDev
     handleTGMsg config

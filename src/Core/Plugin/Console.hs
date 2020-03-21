@@ -17,11 +17,12 @@ import           Plugin.BaikeQuerier
 import           Plugin.NoteSaver
 import           Plugin.Timer
 import           Plugin.DiceHelper
+import           Plugin.SolidotFetcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
   case Text.toLower cmdHeader of
-    "/bkqr" -> processQuery
+    "/bk" -> processQuery
 
     "/svnote" -> saveNote
     "/note" -> queryNote
@@ -31,6 +32,9 @@ getHandler cmdHeader =
     "/pd" -> setPomodoro
 
     "/dc" -> processDiceRolling
+
+    "/subsd" -> addSubscriber
+    "/cxlsubsd" -> rmSubscribe
 
     "/help" -> getCommandHelps
     _     -> pure $ pure []
@@ -50,12 +54,18 @@ commandProcess update config = do
   void $ traverse (`sendTextMsg` config) msgs
 
 -- This is an automatic operation which checks plugin events every 1 minute.
-checkPluginEvents :: Config -> IO ()
-checkPluginEvents config = forever $ do
-  msgs <- checkTimer
-  void $ traverse (`sendTextMsg` config) msgs
+checkPluginEventsIn1 :: Config -> IO ()
+checkPluginEventsIn1 config = forever $ do
+  msgs <- sequence [checkTimer, checkNewOfSolidot]
+
+  void $ traverse (`sendTextMsg` config) $ mconcat msgs
   threadDelay 60000000
 
+checkPluginEventsIn10 :: Config -> IO ()
+checkPluginEventsIn10 config = forever $ do
+  msgs <- sequence [checkNewOfSolidot]
+  void $ traverse (`sendTextMsg` config) $ mconcat msgs
+  threadDelay 600000000
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (_, update) = do
@@ -64,5 +74,6 @@ getCommandHelps (_, update) = do
                  , noteHelps
                  , timerHelps
                  , diceHelps
+                 , solidotHelps
                  ]
   pure [makeReqFromUpdate update helps]

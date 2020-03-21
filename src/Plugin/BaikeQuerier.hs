@@ -8,7 +8,6 @@ import           Core.Data.Unity
 import           Utils.Logging
 
 import           Network.Wreq
-import           Network.URI.Encode
 import           Control.Lens
 import qualified Data.ByteString              as BS    (ByteString)
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
@@ -18,13 +17,13 @@ import qualified Data.Text                    as Text
 import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
 
-searchBetween :: BS.ByteString -> BS.ByteString -> ByteString -> ByteString
+searchBetween :: BS.ByteString -> BS.ByteString -> BL.ByteString -> BL.ByteString
 searchBetween left right content =
   let fstround = snd $ breakAfter left content in
       fst (breakOn right fstround)
 
-getFstUrl :: ByteString -> Maybe String
-getFstUrl content = fixUrl $ UTF8.toString $ searchBetween "baike.baidu.com/item" "\"" (BL.drop 200000 content)
+getFstUrl :: BL.ByteString -> Maybe String
+getFstUrl content = fixUrl $ UTF8.toString $ searchBetween "baike.baidu.com/item" "\"" (BL.drop 180000 content)
   where fixUrl "" = Nothing
         fixUrl xs = Just $ "https://baike.baidu.com/item" ++ xs
 
@@ -42,17 +41,17 @@ concatWord oStr = replace "&quot;" ("\""::BL.ByteString) (replace "\n" (""::BL.B
 
 runBaiduSearch :: String -> IO Text.Text
 runBaiduSearch query = do
-  result <- getWith opts $ "https://www.baidu.com/s?wd=" ++ query ++ " site%3Abaike.baidu.com%20&ie=utf-8&pn=0&cl=3&rn=100"
+  result <- getWith opts $ "https://www.baidu.com/s?wd=" ++ query ++ " site:baike.baidu.com&ie=utf-8&pn=0&cl=3&rn=100"
   case getFstUrl (result ^. responseBody) of
     Nothing      -> pure "无结果。"
     Just realUrl -> do
       realRsp <- get realUrl
       case concatWord $ getWords $ getFirstPara $ realRsp ^. responseBody of
         "" -> pure (Text.pack $
-                     "已为您找到一个词条，但此词条无摘要。查看此处: " <> encode realUrl)
+                     "已为您找到一个词条，但此词条无摘要。查看此处:\n" <> realUrl)
         resultText  -> pure $ TextL.toStrict $ decodeUtf8 resultText
   where
-    getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "/div>"
+    getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]
 
 processQuery :: (Text.Text, Update) -> IO [SendMsg]
@@ -69,4 +68,4 @@ processQuery (cmdBody, update) =
 
 baikeHelps :: Text.Text
 baikeHelps = Text.unlines [ "====BaikeQuerier===="
-                          , "/bkqr ENTRYNAME: 从baike.baidu.com查询词条"]
+                          , "/bk ENTRYNAME: 从baike.baidu.com查询词条"]

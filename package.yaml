@@ -20,26 +20,19 @@ description:         This is a program used to provide tools for QQ and Telegram
 
 dependencies:
 - base >= 4.7 && < 5
-- network
-- containers
 - aeson
-- conduit
-- lens
 - text
-- wai-extra
-- data-default
-- wreq
 - http-types
 - bytestring
+- wai-extra
 - time
 - scotty
 - stringsearch
 - utf8-string
-- transformers
-- hspec
-- QuickCheck
 - random
-- uri-encode
+- wreq
+- lens
+- attoparsec
 
 library:
   source-dirs: src
@@ -51,9 +44,6 @@ executables:
     ghc-options:
     - -O2
     - -Wall
-      # - -static
-      # - -optl-static
-      # - -fPIC
     dependencies:
     - wl-bot
 
