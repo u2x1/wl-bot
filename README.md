@@ -8,9 +8,10 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 
 ## What it can do
 
-- Search entries from Baidu Baike (/qr)
-- Save notes (/sn|/qn)
+- Search entries from Baidu Baike (/bk)
+- Save notes (/svnote|/note)
 - Pomodoro (/pd)
+- Roll dice (/dc)
 
 ## How to use it
 
@@ -20,7 +21,6 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 
    ```json
    {
-      "admins":[],
       "tgbotToken":"",
       "cqServer":"",
       "thisServer":"",
@@ -30,7 +30,6 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 
 | Key        | Description                          | Example Value            |
 |------------|--------------------------------------|--------------------------|
-| admins     | (WIP)                                |                          |
 | port       | The port this program listen         | 8443                     |
 | thisServer | This server address used for Webhook | "https://yourserver"     |
 | cqServer   | CoolQ server address for API calling | "http://localhost:5700"  |

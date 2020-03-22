@@ -5,8 +5,8 @@ import Data.Aeson
 import GHC.Generics
 
 data Config = Config {
-    admins     :: [Integer]
-  , port       :: Int
+--    admins     :: [Integer]
+    port       :: Int
   , thisServer :: String
   , cqServer   :: String
   , tgbotToken :: String
