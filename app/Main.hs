@@ -27,6 +27,7 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
+  _ <- liftIO $ forkIO checkPluginRequirements
   _ <- liftIO $ forkIO (checkPluginEventsIn1 config)
   _ <- liftIO $ forkIO (checkPluginEventsIn10 config)
   scotty (port config) $ do

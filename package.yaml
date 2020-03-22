@@ -33,6 +33,8 @@ dependencies:
 - wreq
 - lens
 - attoparsec
+- directory
+
 
 library:
   source-dirs: src

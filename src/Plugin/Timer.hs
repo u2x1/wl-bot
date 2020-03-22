@@ -22,12 +22,12 @@ readCusTime = parseTimeOrError True defaultTimeLocale timeFormat
 
 saveTimer2File :: NominalDiffTime -> Integer -> Platform -> IO (Maybe ())
 saveTimer2File countdown userId plat = do
-  timers <- Text.readFile "timers.txt"
+  timers <- Text.readFile (head timerRqmt)
   if snd (Text.breakOn (Text.pack $ show userId) timers) == ""
      then do
        nowTime <- getCurrentTime
        let recordTime = formatTime defaultTimeLocale timeFormat $ addUTCTime countdown nowTime
-       _ <- Text.appendFile "timers.txt" $ Text.pack
+       _ <- Text.appendFile (head timerRqmt) $ Text.pack
               (recordTime <> " " <> show userId <> " " <> show plat <> "\n")
        pure $ Just ()
      else pure Nothing
@@ -39,10 +39,10 @@ checkTimer = do
 
 rmTimeOutUser :: IO [(Integer, Platform)]
 rmTimeOutUser = do
-  fileContent <- Text.readFile "timers.txt"
-  let timers = map (Text.splitOn " ") (Text.splitOn "\n" fileContent)
+  fileContent <- Text.readFile (head timerRqmt)
+  let timers = Text.splitOn " " <$> Text.splitOn "\n" fileContent
   timerList <- traverse checkIfTimesOut timers
-  _ <- Text.writeFile "timers.txt" $ (mconcat.intersperse "\n") (lefts timerList)
+  _ <- Text.writeFile (head timerRqmt) $ (mconcat.intersperse "\n") (lefts timerList)
   pure $ rights timerList
   where
     checkIfTimesOut [time, userId, plat] = do
@@ -53,7 +53,7 @@ rmTimeOutUser = do
                                      "Telegram" -> Telegram
                                      "QQ" -> QQ
                                      _    -> error "Unrecognized platform.")
-         else pure $ Left (time <> " " <> userId <> " " <> plat)
+         else pure $ Left $ (mconcat.intersperse " ") [time, userId, plat]
     checkIfTimesOut _ = pure $ Left ""
 
 addTimer :: (Text.Text, Update) -> IO [SendMsg]
@@ -80,12 +80,15 @@ setPomodoro (_, update) = do
 
 cancelTimer :: (Text.Text, Update) -> IO [SendMsg]
 cancelTimer (_, update) = do
-  fileContent <- Text.readFile "timers.txt"
+  fileContent <- Text.readFile (head timerRqmt)
   let timers = Prelude.init $ Text.splitOn "\n" fileContent
       afterRmTimers =
         filter (\timer -> snd (Text.breakOn (Text.pack $ show (user_id update)) timer) == "") timers
-  _ <- Text.writeFile "timers.txt" $ (mconcat.intersperse "\n") afterRmTimers
+  _ <- Text.writeFile (head timerRqmt) $ (mconcat.intersperse "\n") afterRmTimers
   pure [makeReqFromUpdate update "倒计时已取消。"]
+
+timerRqmt :: [String]
+timerRqmt = fmap ("wldata/" <>) ["TR-timers.txt"]
 
 timerHelps :: Text.Text
 timerHelps = Text.unlines [ "====Timer===="

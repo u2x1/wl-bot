@@ -3,6 +3,10 @@ module Core.Plugin.Console where
 
 import qualified Data.Text as Text
 import           Data.List
+import           Data.Foldable
+
+import           System.Directory
+
 import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
 import           Core.Web.Unity
@@ -51,25 +55,37 @@ getMsgs2Send update =
 commandProcess :: Update -> Config -> IO ()
 commandProcess update config = do
   msgs <- getMsgs2Send update
-  void $ traverse (`sendTextMsg` config) msgs
+  traverse_ (`sendTextMsg` config) msgs
+
+checkPluginRequirements :: IO ()
+checkPluginRequirements = do
+  let rqmt = map ("wldata/"<>) $ mconcat [ timerRequirement
+                                         , sfRequirement
+                                         , noteRequirement
+                                         ]
+  de <- doesDirectoryExist "wldata"
+  _ <- if de then pure () else createDirectory "wldata"
+  traverse_ (\fileName -> do
+    fe <- doesFileExist fileName
+    if fe then pure () else writeFile fileName "") rqmt
+
 
 -- This is an automatic operation which checks plugin events every 1 minute.
 checkPluginEventsIn1 :: Config -> IO ()
 checkPluginEventsIn1 config = forever $ do
   msgs <- sequence [checkTimer, checkNewOfSolidot]
-
-  void $ traverse (`sendTextMsg` config) $ mconcat msgs
+  traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay 60000000
 
 checkPluginEventsIn10 :: Config -> IO ()
 checkPluginEventsIn10 config = forever $ do
   msgs <- sequence [checkNewOfSolidot]
-  void $ traverse (`sendTextMsg` config) $ mconcat msgs
+  traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay 600000000
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (_, update) = do
-  let helps = (mconcat.intersperse "\n\n")
+  let helps = (mconcat.intersperse "\n")
                  [ baikeHelps
                  , noteHelps
                  , timerHelps

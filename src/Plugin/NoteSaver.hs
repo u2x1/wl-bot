@@ -17,12 +17,10 @@ searchBetween left right content =
     (_, fstRound) -> Just $ fst (breakOn right fstRound)
 
 writeNoteFile :: Text -> Text -> IO ()
-writeNoteFile key value = Text.appendFile "notes.txt" ("`{"<>key<>">`"<>value<>"!^\n")
+writeNoteFile key value = Text.appendFile (Prelude.head noteRqmt) ("`{"<>key<>">`"<>value<>"!^\n")
 
 readNoteFile :: Text -> IO (Maybe Text)
-readNoteFile key = do
-  notes <- Text.readFile "notes.txt"
-  pure $ searchBetween ("`{"<>key<>">`") "!^" notes
+readNoteFile key = Text.readFile (Prelude.head noteRqmt) >>= (pure.searchBetween ("`{"<>key<>">`") "!^")
 
 queryNote :: (Text, Update) -> IO [SendMsg]
 queryNote (cmdBody, update) =
@@ -49,6 +47,9 @@ saveNote (cmdBody, update) =
     else pure [makeReqFromUpdate update noteHelps]
   where
     content = Text.strip cmdBody
+
+noteRqmt :: [String]
+noteRqmt = fmap ("wldata/" <> ) ["NT-notes.txt"]
 
 noteHelps :: Text.Text
 noteHelps = Text.unlines [ "====NoteSaver===="
