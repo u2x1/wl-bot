@@ -27,11 +27,14 @@ rollDice (dcCnt,dcType) = do
 processDiceRolling :: (Text.Text, Update) -> IO [SendMsg]
 processDiceRolling (cmdBody, update) =
   case parseDice $ Text.strip cmdBody of
-    Just diceTup -> do
-      dice <- rollDice diceTup
-      _ <- logWT Info $ "Dice " <> show diceTup <> " generated from " <> show (user_id update)
-      pure [makeReqFromUpdate update $ Text.pack
-        ("<" <> show (fst diceTup) <> "D" <> show (snd diceTup) <> "> " <> show (sum dice) <> if length dice > 1 then "\n骰子依次为: " <> show dice else "")]
+    Just diceTup ->
+      if fst diceTup > 100 || (snd diceTup * fst diceTup > 999999)
+         then pure [makeReqFromUpdate update "骰子数或骰子面数超出限制。"]
+         else do
+           dice <- rollDice diceTup
+           _ <- logWT Info $ "Dice " <> show diceTup <> " generated from " <> show (user_id update)
+           pure [makeReqFromUpdate update $ Text.pack
+             ("<" <> show (fst diceTup) <> "D" <> show (snd diceTup) <> "> " <> show (sum dice) <> if fst diceTup > 1 then "\n骰子依次为: " <> show dice else "")]
     Nothing -> pure [makeReqFromUpdate update diceHelps]
 
 diceHelps :: Text.Text

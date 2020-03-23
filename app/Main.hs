@@ -28,8 +28,8 @@ main = do
 runServer :: Config -> IO ()
 runServer config = do
   _ <- liftIO $ forkIO checkPluginRequirements
-  _ <- liftIO $ forkIO (checkPluginEventsIn1 config)
-  _ <- liftIO $ forkIO (checkPluginEventsIn10 config)
+  _ <- liftIO $ forkIO (checkPluginEventsIn1Min config)
+  _ <- liftIO $ forkIO (checkPluginEventsIn1Day config)
   scotty (port config) $ do
 --    middleware logStdoutDev
     handleTGMsg config

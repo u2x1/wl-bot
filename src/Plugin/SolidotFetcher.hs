@@ -74,7 +74,6 @@ parseSubscriber = do
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
   pure $ sequence $ liftA2 uncurry3 (pure SendMsg) infos
   where
-    uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
     uncurry3 f (a, b, c) = f a b c
     getSubscriberInfos [userId, plat, targetType] = Just
       ( fromRight 0 $ fst <$> decimal userId
@@ -97,7 +96,8 @@ checkNewOfSolidot = do
      then do
        BL.writeFile (head sfRqmt) $ mconcat.intersperse "\n" $ get1st <$> newContent
        f <- parseSubscriber
-       pure $ f (combineContent (head newContent))
+       pure $ mconcat $ f.combineContent <$> dropWhile
+         (\(title,_,_) -> snd (Text.breakOn ((TextL.toStrict . decodeUtf8) title) originContent) == "") newContent
      else pure []
     where
       get1st (x,_,_) = x

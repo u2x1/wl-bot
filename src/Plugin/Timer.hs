@@ -48,7 +48,7 @@ rmTimeOutUser = do
     checkIfTimesOut [time, userId, plat] = do
       nowTime <- getCurrentTime
       if nowTime > readCusTime (Text.unpack time)
-         then pure $ Right (fromRight 1 $ fst <$> decimal userId,
+         then pure $ Right (fromRight 0 $ fst <$> decimal userId,
                                    case plat of
                                      "Telegram" -> Telegram
                                      "QQ" -> QQ

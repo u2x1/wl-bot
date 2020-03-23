@@ -59,29 +59,37 @@ commandProcess update config = do
 
 checkPluginRequirements :: IO ()
 checkPluginRequirements = do
-  let rqmt = map ("wldata/"<>) $ mconcat [ timerRequirement
-                                         , sfRequirement
-                                         , noteRequirement
-                                         ]
+  let rqmt = mconcat [ timerRqmt
+                     , sfRqmt
+                     , noteRqmt
+                     ]
   de <- doesDirectoryExist "wldata"
   _ <- if de then pure () else createDirectory "wldata"
   traverse_ (\fileName -> do
     fe <- doesFileExist fileName
     if fe then pure () else writeFile fileName "") rqmt
 
+type Microsecond = Int
+oneMin :: Microsecond
+oneMin = 60000000
 
--- This is an automatic operation which checks plugin events every 1 minute.
-checkPluginEventsIn1 :: Config -> IO ()
-checkPluginEventsIn1 config = forever $ do
-  msgs <- sequence [checkTimer, checkNewOfSolidot]
+-- | An automatic operation which checks plugin events every 1 minute.
+checkPluginEventsIn1Min :: Config -> IO ()
+checkPluginEventsIn1Min config = forever $ do
+  msgs <- sequence [checkTimer]
   traverse_ (`sendTextMsg` config) $ mconcat msgs
-  threadDelay 60000000
+  threadDelay oneMin
 
-checkPluginEventsIn10 :: Config -> IO ()
-checkPluginEventsIn10 config = forever $ do
+checkPluginEventsIn1Day :: Config -> IO ()
+checkPluginEventsIn1Day config = forever $ do
   msgs <- sequence [checkNewOfSolidot]
-  traverse_ (`sendTextMsg` config) $ mconcat msgs
-  threadDelay 600000000
+  sendMsgWithDelay 10 config $ mconcat msgs
+  threadDelay (oneMin*60*24)
+
+-- | "Delay" is in the unit of minutes.
+sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
+sendMsgWithDelay delay config =
+  traverse_ (\msg -> sendTextMsg msg config >> threadDelay (delay*oneMin))
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (_, update) = do
