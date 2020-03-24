@@ -34,6 +34,8 @@ dependencies:
 - lens
 - attoparsec
 - directory
+- websockets
+- network
 
 
 library:

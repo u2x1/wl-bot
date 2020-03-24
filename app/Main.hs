@@ -1,19 +1,36 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Web.Scotty                as Scotty
-import           Network.HTTP.Types                    (status204, status500, status200)
---import           Network.Wai.Middleware.RequestLogger
+import qualified Network.WebSockets        as WS
+import           Network.HTTP.Types                    (status500, status200)
+import           Control.Monad                         (forever)
 import           Control.Monad.IO.Class                (liftIO)
 import           Control.Exception                     (try, SomeException)
 import           Control.Concurrent                    (forkIO)
 import qualified Data.ByteString.Lazy      as BL
-import           Data.Aeson                            (eitherDecode)
+import           Data.Aeson
 import           Core.Data.Unity
 import           Core.Type.Telegram.Update as TG
 import           Core.Type.CoolQ.Update    as CQ
+import           Core.Plugin.Console
 import           Utils.Config
 import           Utils.Logging
 
-import Core.Plugin.Console
+--import           Network.Wai.Middleware.RequestLogger
+
+app :: Config -> WS.Connection -> IO b
+app config conn = do
+    logWT Info "WebSocket connected."
+    forever $ do
+        msg <- decode <$> WS.receiveData conn :: IO (Maybe CQ.Update)
+        case msg of
+          Just originUpdate ->
+            case makeUpdateFromCQ originUpdate of
+              Just update -> do
+                _ <- liftIO $ forkIO (commandProcess update config)
+                liftIO $ pure ()
+
+              Nothing -> liftIO $ pure ()
+          Nothing -> liftIO $ pure ()
 
 main :: IO ()
 main = do
@@ -27,13 +44,12 @@ main = do
 
 runServer :: Config -> IO ()
 runServer config = do
-  _ <- liftIO $ forkIO checkPluginRequirements
+  _ <- checkPluginRequirements
   _ <- liftIO $ forkIO (checkPluginEventsIn1Min config)
   _ <- liftIO $ forkIO (checkPluginEventsIn1Day config)
-  scotty (port config) $ do
---    middleware logStdoutDev
-    handleTGMsg config
-    handleCQMsg config
+
+  _ <- liftIO $ forkIO (WS.runClient (ws_host config) (ws_port config) "/" (app config))
+  scotty (port config) $ handleTGMsg config
 
 handleTGMsg :: Config -> ScottyM ()
 handleTGMsg config =
@@ -42,15 +58,5 @@ handleTGMsg config =
     case makeUpdateFromTG originUpdate of
       Just update -> do
         _ <- liftIO $ forkIO (commandProcess update config)
-        status status204
-      Nothing     -> status status200
-
-handleCQMsg :: Config -> ScottyM ()
-handleCQMsg config =
-  Scotty.post (literal "/cq/") $ do
-    originUpdate <- jsonData :: ActionM CQ.Update
-    case makeUpdateFromCQ originUpdate of
-      Just update -> do
-        _ <- liftIO $ forkIO (commandProcess update config)
-        status status204
-      Nothing -> status status500
+        status status200
+      Nothing     -> status status500

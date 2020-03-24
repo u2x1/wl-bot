@@ -10,6 +10,8 @@ data Config = Config {
   , thisServer :: String
   , cqServer   :: String
   , tgbotToken :: String
+  , ws_host    :: String
+  , ws_port    :: Int
 } deriving (Eq, Show, Generic)
 
 instance FromJSON Config
