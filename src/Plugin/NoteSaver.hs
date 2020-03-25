@@ -6,21 +6,16 @@ import           Core.Type.Unity.Request      as UR
 
 import           Core.Data.Unity
 import           Utils.Logging
+import           Utils.Misc                              (searchBetweenText)
 
 import           Data.Text                    as Text
 import           Data.Text.IO                 as Text
-
-searchBetween :: Text -> Text -> Text -> Maybe Text
-searchBetween left right content =
-  case breakOnEnd left content of
-    ("",_) -> Nothing
-    (_, fstRound) -> Just $ fst (breakOn right fstRound)
 
 writeNoteFile :: Text -> Text -> IO ()
 writeNoteFile key value = Text.appendFile (Prelude.head noteRqmt) ("`{"<>key<>">`"<>value<>"!^\n")
 
 readNoteFile :: Text -> IO (Maybe Text)
-readNoteFile key = Text.readFile (Prelude.head noteRqmt) >>= (pure.searchBetween ("`{"<>key<>">`") "!^")
+readNoteFile key = Text.readFile (Prelude.head noteRqmt) >>= (pure.searchBetweenText ("`{"<>key<>">`") "!^")
 
 queryNote :: (Text, Update) -> IO [SendMsg]
 queryNote (cmdBody, update) =

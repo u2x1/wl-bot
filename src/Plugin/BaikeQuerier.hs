@@ -6,10 +6,10 @@ import           Core.Type.Unity.Request      as UR
 import           Core.Data.Unity
 
 import           Utils.Logging
+import           Utils.Misc                            (searchBetweenBL)
 
 import           Network.Wreq
 import           Control.Lens
-import qualified Data.ByteString              as BS    (ByteString)
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
 import           Data.ByteString.Lazy         as BL
 import           Data.ByteString.Lazy.Search           (breakOn, breakAfter, replace)
@@ -17,15 +17,9 @@ import qualified Data.Text                    as Text
 import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
 
-searchBetween :: BS.ByteString -> BS.ByteString -> BL.ByteString -> BL.ByteString
-searchBetween left right content =
-  let fstround = snd $ breakAfter left content in
-      fst (breakOn right fstround)
-
 getFstUrl :: BL.ByteString -> Maybe String
-getFstUrl content = fixUrl $ UTF8.toString $ searchBetween "baike.baidu.com/item" "\"" (BL.drop 180000 content)
-  where fixUrl "" = Nothing
-        fixUrl xs = Just $ "https://baike.baidu.com/item" ++ xs
+getFstUrl content = fixUrl $ UTF8.toString <$> searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 content)
+  where fixUrl = fmap ("https://baike.baidu.com/item" ++)
 
 getWords :: ByteString -> [ByteString]
 getWords "" = []
@@ -46,12 +40,12 @@ runBaiduSearch query = do
     Nothing      -> pure "无结果。"
     Just realUrl -> do
       realRsp <- get realUrl
-      case concatWord $ getWords $ getFirstPara $ realRsp ^. responseBody of
-        "" -> pure (Text.pack $
+      case  getFirstPara $ realRsp ^. responseBody of
+        Nothing -> pure (Text.pack $
                      "已为您找到一个词条，但此词条无摘要。查看此处:\n" <> realUrl)
-        resultText  -> pure $ TextL.toStrict $ decodeUtf8 resultText
+        Just resultText  -> (pure.TextL.toStrict.decodeUtf8.concatWord.getWords) resultText
   where
-    getFirstPara = searchBetween "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
+    getFirstPara = searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]
 
 processQuery :: (Text.Text, Update) -> IO [SendMsg]

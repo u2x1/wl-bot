@@ -22,6 +22,7 @@ import           Plugin.NoteSaver
 import           Plugin.Timer
 import           Plugin.DiceHelper
 import           Plugin.SolidotFetcher
+import           Plugin.SauceNAOSearcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
@@ -40,17 +41,21 @@ getHandler cmdHeader =
     "/subsd" -> addSubscriber
     "/cxlsubsd" -> rmSubscribe
 
+    "/sp" -> processSnaoQuery
+
     "/help" -> getCommandHelps
     _     -> pure $ pure []
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
-  if Text.head msgTxt /= '/'
-     then pure []
-     else
-       let command = Text.breakOn " " msgTxt in
-       getHandler (fst command) (snd command, update)
-  where msgTxt = message_text update
+  case message_text update of
+    Just msgTxt ->
+      if Text.head msgTxt /= '/'
+         then pure []
+         else
+           let command = Text.breakOn " " msgTxt in
+           getHandler (fst command) (snd command, update)
+    _ -> pure []
 
 commandProcess :: Update -> Config -> IO ()
 commandProcess update config = do
@@ -99,5 +104,6 @@ getCommandHelps (_, update) = do
                  , timerHelps
                  , diceHelps
                  , solidotHelps
+                 , snaoHelps
                  ]
   pure [makeReqFromUpdate update helps]
