@@ -83,7 +83,7 @@ checkPluginEventsIn1Min config = forever $ do
 checkPluginEventsIn1Day :: Config -> IO ()
 checkPluginEventsIn1Day config = forever $ do
   msgs <- sequence [checkNewOfSolidot]
-  sendMsgWithDelay 10 config $ mconcat msgs
+  traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay (oneMin*60*24)
 
 -- | "Delay" is in the unit of minutes.

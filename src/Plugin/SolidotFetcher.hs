@@ -96,7 +96,7 @@ checkNewOfSolidot = do
      then do
        BL.writeFile (head sfRqmt) $ mconcat.intersperse "\n" $ get1st <$> newContent
        f <- parseSubscriber
-       pure $ mconcat $ f.combineContent <$> dropWhile
+       pure $ reverse $ mconcat $ f.combineContent <$> takeWhile
          (\(title,_,_) -> snd (Text.breakOn ((TextL.toStrict . decodeUtf8) title) originContent) == "") newContent
      else pure []
     where
