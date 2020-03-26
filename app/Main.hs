@@ -15,8 +15,6 @@ import           Core.Plugin.Console
 import           Utils.Config
 import           Utils.Logging
 
---import           Network.Wai.Middleware.RequestLogger
-
 app :: Config -> WS.Connection -> IO b
 app config conn = do
     logWT Info "WebSocket connected."

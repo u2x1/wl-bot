@@ -26,35 +26,35 @@ import           Plugin.SauceNAOSearcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
-  case Text.toLower cmdHeader of
-    "/bk" -> processQuery
+  case Text.toLower $ Text.drop 1 cmdHeader of
+    "bk" -> processQuery
 
-    "/svnote" -> saveNote
-    "/note" -> queryNote
+    "svnote" -> saveNote
+    "note" -> queryNote
 
-    "/timer" -> addTimer
-    "/cxltimer" -> cancelTimer
-    "/pd" -> setPomodoro
+    "timer" -> addTimer
+    "cxltimer" -> cancelTimer
+    "pd" -> setPomodoro
 
-    "/dc" -> processDiceRolling
+    "dc" -> processDiceRolling
 
-    "/subsd" -> addSubscriber
-    "/cxlsubsd" -> rmSubscribe
+    "subsd" -> addSubscriber
+    "cxlsubsd" -> rmSubscribe
 
-    "/sp" -> processSnaoQuery
+    "sp" -> processSnaoQuery
 
-    "/help" -> getCommandHelps
+    "help" -> getCommandHelps
     _     -> pure $ pure []
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
   case message_text update of
     Just msgTxt ->
-      if Text.head msgTxt /= '/'
-         then pure []
-         else
+      if Text.head msgTxt == '/' || Text.head msgTxt == '.' || Text.head msgTxt == '。'
+         then
            let command = Text.breakOn " " msgTxt in
            getHandler (fst command) (snd command, update)
+         else pure []
     _ -> pure []
 
 commandProcess :: Update -> Config -> IO ()
