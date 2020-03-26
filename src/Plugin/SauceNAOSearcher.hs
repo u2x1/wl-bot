@@ -21,10 +21,13 @@ runSauceNAOSearch apiKey imgUrl = do
   r <- (try $ Wreq.get $
                   snaoHost <> "?db=999&output_type=2&numres=1&api_key=" <> apiKey <> "&url=" <> Text.unpack imgUrl) :: IO (Either SomeException (Response BL.ByteString))
   case r of
-    Right realR -> case decode $ realR ^. responseBody of
-                     Just x -> (pure.Right) x
-                     _ -> (pure.Left) "未找到近似图片。"
-    Left excp -> (pure.Left) $ "请求错误: " <> show excp
+    Right realR -> case eitherDecode $ realR ^. responseBody of
+                     Right x -> (pure.Right) x
+                     Left str -> (pure.Left) $ "未找到近似图片。"<>str
+    Left excp ->
+      if snd (Text.breakOn "rate limit" (Text.pack $ show excp)) == ""
+         then (pure.Left) $ "请求错误: " <> show excp
+         else (pure.Left) "已超出30秒内搜图限制。"
     where snaoHost = "https://saucenao.com/search.php"
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
@@ -42,10 +45,16 @@ processSnaoQuery (_, update) =
                   [ "[相似度] " <> (sr_similarity.head.sr_results) rst
                   , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
                   , "[图源] "   <> head extUrls
-                  , "[剩余次数] " <> Text.pack (show (sh_short_remaining rst))
-                  ]]
-             _ -> pure [makeReqFromUpdate update $
-                     "该图片没有来源，也许你想看看这个:" <> (sr_thumbnail.head.sr_results) rst]
+                  , "[剩余次数] " <> Text.pack (show (sh_short_remaining rst))]]
+             _ -> case (sr_doujinshi_name.head.sr_results) rst of
+                    Just dn ->
+                      pure [makeReqFromUpdate update $ Text.unlines
+                         [ "[相似度] " <> (sr_similarity.head.sr_results) rst
+                         , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
+                         , "[本子名] " <> dn
+                         , "[剩余次数] " <> Text.pack (show (sh_short_remaining rst))]]
+                    _ -> pure [makeReqFromUpdate update $
+                               "该图片没有来源，也许你想看看这个:" <> (sr_thumbnail.head.sr_results) rst]
          Left x -> pure [makeReqFromUpdate update $ Text.pack x]
      _ -> pure [makeReqFromUpdate update snaoHelps]
 
@@ -70,9 +79,11 @@ data SnaoResults = SnaoResults {
     sr_similarity :: Text.Text
   , sr_thumbnail :: Text.Text
   , sr_ext_url :: Maybe [Text.Text]
+  , sr_doujinshi_name :: Maybe Text.Text
 } deriving (Show)
 instance FromJSON SnaoResults where
   parseJSON = withObject "SnaoResults" $ \v -> SnaoResults
         <$> ((v .: "header") >>= (.: "similarity"))
         <*> ((v .: "header") >>= (.: "thumbnail"))
-        <*> ((v .: "data") >>= (.: "ext_urls"))
+        <*> ((v .: "data") >>= (.:? "ext_urls"))
+        <*> ((v .: "data") >>= (.:? "jp_name"))

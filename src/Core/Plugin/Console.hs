@@ -23,6 +23,7 @@ import           Plugin.Timer
 import           Plugin.DiceHelper
 import           Plugin.SolidotFetcher
 import           Plugin.SauceNAOSearcher
+import           Plugin.Ascii2dSearcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader =
@@ -42,6 +43,7 @@ getHandler cmdHeader =
     "cxlsubsd" -> rmSubscribe
 
     "sp" -> processSnaoQuery
+    "asc" -> processAscii2dSearch
 
     "help" -> getCommandHelps
     _     -> pure $ pure []
@@ -105,5 +107,6 @@ getCommandHelps (_, update) = do
                  , diceHelps
                  , solidotHelps
                  , snaoHelps
+                 , a2dHelps
                  ]
   pure [makeReqFromUpdate update helps]

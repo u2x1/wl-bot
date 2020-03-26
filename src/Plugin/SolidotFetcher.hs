@@ -47,14 +47,14 @@ getElemContent = mconcat . getAllBetween ">" "<" . (">" <>) . (<> "<")
 rmSubscribe :: (Text.Text, Update) -> IO [SendMsg]
 rmSubscribe (_, update) = do
   fileContent <- Text.readFile (sfRqmt !! 1)
-  if snd (Text.breakOn (Text.pack $ show (user_id update)) fileContent) == ""
+  if snd (Text.breakOn (Text.pack $ show (UU.chat_id update)) fileContent) == ""
      then do
       let subscribers = Text.splitOn "\n" fileContent
           afterRmUsers =
-            filter (\user -> snd (Text.breakOn (Text.pack $ show (user_id update)) user) == "") subscribers
+            filter (\user -> snd (Text.breakOn (Text.pack $ show (UU.chat_id update)) user) == "") subscribers
       _ <- Text.writeFile (sfRqmt !! 1) $ (mconcat.intersperse "\n") afterRmUsers
       pure [makeReqFromUpdate update "已取消对Solidot的订阅。"]
-      else pure [makeReqFromUpdate update "您不在Solidot的订阅人列表内。"]
+      else pure [makeReqFromUpdate update "您不在Solidot的订阅列表内。"]
 
 addSubscriber :: (Text.Text, Update) -> IO [SendMsg]
 addSubscriber (_, update) = do
@@ -64,7 +64,7 @@ addSubscriber (_, update) = do
        appendFile (sfRqmt !! 1) (show chatId <> " " <> show (platform update) <> " " <> show (message_type update) <> "\n")
        pure [makeReqFromUpdate update "订阅Solidot成功。"]
      else
-       pure [makeReqFromUpdate update "您已在订阅人列表内。"]
+       pure [makeReqFromUpdate update "您已在订阅列表内。"]
     where chatId = UU.chat_id update
 
 parseSubscriber :: IO (Text.Text -> [SendMsg])
