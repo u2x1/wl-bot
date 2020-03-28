@@ -18,6 +18,7 @@ import           Plugin.Timer
 import           Plugin.DiceHelper
 import           Plugin.SolidotFetcher
 import           Plugin.SauceNAOSearcher
+import           Plugin.NHentaiQuerier
 import           Plugin.Ascii2dSearcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
@@ -39,6 +40,7 @@ getHandler cmdHeader =
 
     "sp" -> processSnaoQuery
     "asc" -> processAscii2dSearch
+    "nht" -> processNHentaiQuery
 
     "help" -> getCommandHelps
     _     -> pure $ pure []

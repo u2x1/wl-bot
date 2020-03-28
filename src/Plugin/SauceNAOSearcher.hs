@@ -19,77 +19,70 @@ import           Plugin.NHentaiQuerier
 
 type Similarity = Text.Text
 type Url        = Text.Text
-runSauceNAOSearch :: String -> Text.Text -> IO (Either String SnaoResult)
+runSauceNAOSearch :: Text.Text -> Text.Text -> IO (Either String SnaoResults)
 runSauceNAOSearch apiKey imgUrl = do
-  r <- try.Wreq.get $
-        snaoHost <> "?db=999&output_type=2&numres=1&api_key=" <> apiKey <> "&url=" <> Text.unpack imgUrl :: IO (Either SomeException (Response BL.ByteString))
+  let opts = defaults & param "db" .~ ["999"]
+                      & param "output_type" .~ ["2"]
+                      & param "numres" .~ ["1"]
+                      & param "api_key" .~ [apiKey]
+                      & param "url" .~ [imgUrl]
+  r <- try $ Wreq.getWith opts "https://saucenao.com/search.php" 
+                :: IO (Either SomeException (Response BL.ByteString))
   case r of
     Right realR -> case eitherDecode $ realR ^. responseBody of
                      Right x -> (pure.Right) x
-                     Left str -> (pure.Left) $ "未找到近似图片。"<>str
-    Left excp ->
+                     Left str -> (pure.Left) $ "未找到近似图片。"<> str
+    Left excp -> (pure.Left) $
       if snd (Text.breakOn "rate limit" (Text.pack $ show excp)) == ""
-         then (pure.Left) $ "请求错误: " <> show excp
-         else (pure.Left) "已超出30秒内搜图限制。"
-    where snaoHost = "https://saucenao.com/search.php"
+         then  "请求错误: " <> show excp
+         else  "已超出30秒内搜图限制。"
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
-   case message_image_urls update of
-     Just imgUrls -> do
+   maybe' (message_image_urls update) (pure []) (\imgUrls -> do
        result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls
        logWT Info $
-         "SauceNAO Query: [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
-       case result of
-         Right rst ->
-           case (sr_ext_url.head.sr_results) rst of
-             Just extUrls ->
-               pure [makeReqFromUpdate update $ Misc.unlines
-                  [ "[相似度] " <> (sr_similarity.head.sr_results) rst
-                  , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
-                  , "[图源] "   <> head extUrls]]
-             _ -> case (sr_doujinshi_name.head.sr_results) rst of
+         "SauceNAO [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
+       either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
+         pure . (makeReqFromUpdate update) . Misc.unlines <$>
+           let fstRst = head $ sr_results rst in
+           case sr_ext_url fstRst of
+             Just extUrls -> pure $ [ "[相似度] " <> sr_similarity fstRst
+                                    , "[缩略图] " <> sr_thumbnail fstRst
+                                    , "[图源] " <> head extUrls]
+             _ -> case sr_doujinshi_name fstRst of
                     Just dn -> do
                       n <- getNHentaiBookId dn
-                      let nh = case n of
-                                  Just nhentaiInfo -> 
-                                    [[ "<NHentai搜索结果>"
-                                    , "[标题] " <> snd nhentaiInfo
-                                    , "" <> "https://nhentai.net/g/" <> fst nhentaiInfo]]
-                                  _ -> [[]]
-                      pure $ makeReqFromUpdate update.Misc.unlines <$>
-                          [ "[相似度] " <> (sr_similarity.head.sr_results) rst
-                          , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
-                          , "[本子名] " <> dn] : nh
+                      pure $ ["[本子名] " <> dn] <> 
+                         maybe' n [] (\info ->
+                              ["[NHentai资源]" <> "https://nhentai.net/g/" <> fst info])
                         
-                    _ -> pure []
-         Left x -> pure [makeReqFromUpdate update $ Text.pack x]
-     _ -> pure []
+                    _ -> pure []))
 
 snaoHelps :: [Text.Text]
 snaoHelps = ["{sp<PIC>} 从saucenao.net搜索一张图片。"]
 
-data SnaoResult = SnaoResult {
+data SnaoResults = SnaoResults {
     sh_short_remaining :: Int
   , sh_long_remaining :: Int
   , sh_status :: Int
-  , sr_results :: [SnaoResults]
+  , sr_results :: [SnaoResult]
 } deriving (Show)
-instance FromJSON SnaoResult where
-  parseJSON = withObject "SnaoResult" $ \v -> SnaoResult
+instance FromJSON SnaoResults where
+  parseJSON = withObject "SnaoResults" $ \v -> SnaoResults
         <$> ((v .: "header") >>= (.: "short_remaining"))
         <*> ((v .: "header") >>= (.: "long_remaining"))
         <*> ((v .: "header") >>= (.: "status"))
         <*> (v .: "results")
 
-data SnaoResults = SnaoResults {
+data SnaoResult = SnaoResult {
     sr_similarity :: Text.Text
   , sr_thumbnail :: Text.Text
   , sr_ext_url :: Maybe [Text.Text]
   , sr_doujinshi_name :: Maybe Text.Text
 } deriving (Show)
-instance FromJSON SnaoResults where
-  parseJSON = withObject "SnaoResults" $ \v -> SnaoResults
+instance FromJSON SnaoResult where
+  parseJSON = withObject "SnaoResult" $ \v -> SnaoResult
         <$> ((v .: "header") >>= (.: "similarity"))
         <*> ((v .: "header") >>= (.: "thumbnail"))
         <*> ((v .: "data") >>= (.:? "ext_urls"))
