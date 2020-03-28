@@ -1,7 +1,7 @@
 name:                wl-bot
-version:             0.1.0.0
+version:             0.0.0.1
 github:              "nutr1t07/wl-bot"
-license:             BSD3
+license:             WTFPL
 author:              "Nutr1t07"
 maintainer:          "nutr1t07@outlook.com"
 copyright:           "2019-2020 Nutr1t07"
@@ -27,16 +27,17 @@ dependencies:
 - wai-extra
 - time
 - scotty
+- uri-encode
 - stringsearch
 - utf8-string
 - random
+- transformers
 - wreq
 - lens
 - attoparsec
 - directory
 - websockets
 - network
-
 
 library:
   source-dirs: src
@@ -48,6 +49,9 @@ executables:
     ghc-options:
     - -O2
     - -Wall
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
     - wl-bot
 

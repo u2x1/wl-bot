@@ -5,6 +5,7 @@ import           Core.Type.Unity.Update        as UU
 import           Core.Type.Unity.Request       as UR
 import           Core.Data.Unity               as UN
 import           Utils.Logging
+import qualified Utils.Misc                    as Misc
 
 import           Data.Time
 import qualified Data.Text                     as Text
@@ -66,7 +67,7 @@ addTimer (cmdBody, update) =
             Just _ -> logWT Info ("Timer ["<>show alarmTime<>"] set from " <> show (user_id update)) >>
               pure [makeReqFromUpdate update (Text.pack$show alarmTime<>"倒计时开始。")]
             _      -> pure [makeReqFromUpdate update "您有一个已设定的倒计时"]
-        else pure [makeReqFromUpdate update timerHelps]
+        else pure [makeReqFromUpdate update $ Misc.unlines timerHelps]
       where
         content = Text.strip cmdBody
 
@@ -90,8 +91,7 @@ cancelTimer (_, update) = do
 timerRqmt :: [String]
 timerRqmt = fmap ("wldata/" <>) ["TR-timers.txt"]
 
-timerHelps :: Text.Text
-timerHelps = Text.unlines [ "====Timer===="
-                          , "/timer TIME: 设定一个倒计时(以分钟为单位)"
-                          , "/cxltimer: 取消已设定的倒计时"
-                          , "/pd: 一个缩写版本的\"/timer 25\"(\"pd\"意为Pomodoro)"]
+timerHelps :: [Text.Text]
+timerHelps = [ "{timer TIME} 设定一个倒计时(以分钟为单位)"
+             , "{cxltimer} 取消已设定的倒计时"
+             , "{pd} 一个缩写版本的\"/timer 25\"(\"pd\"意为Pomodoro)"]

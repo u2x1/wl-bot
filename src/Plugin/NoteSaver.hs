@@ -24,8 +24,8 @@ queryNote (cmdBody, update) =
        note <- readNoteFile content
        case note of
          Just n -> pure [makeReqFromUpdate update n]
-         _      -> pure [makeReqFromUpdate update "未找到指定笔记。"]
-      else pure [makeReqFromUpdate update noteHelps]
+         _      -> pure [makeReqFromUpdate update "未找到。"]
+      else pure []
   where
     content = Text.strip cmdBody
 
@@ -38,15 +38,14 @@ saveNote (cmdBody, update) =
       _ <- writeNoteFile key value
       logWT Info $
         "Note: ["<>Text.unpack key<>"]"<>Text.unpack value<>"saved from"<>show (user_id update)<>"."
-      pure [makeReqFromUpdate update "笔记已保存。"]
-    else pure [makeReqFromUpdate update noteHelps]
+      pure [makeReqFromUpdate update "已保存。"]
+    else pure []
   where
     content = Text.strip cmdBody
 
 noteRqmt :: [String]
 noteRqmt = fmap ("wldata/" <> ) ["NT-notes.txt"]
 
-noteHelps :: Text.Text
-noteHelps = Text.unlines [ "====NoteSaver===="
-                         , "/svnote NAME CONTENT: 将笔记保存到服务器"
-                         , "/note NAME: 查询一条存在的笔记"]
+noteHelps :: [Text.Text]
+noteHelps = ["{svnote NAME CONTENT} 将笔记保存到服务器"
+            , "{note NAME} 查询一条存在的笔记"]

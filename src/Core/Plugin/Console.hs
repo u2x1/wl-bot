@@ -2,21 +2,16 @@
 module Core.Plugin.Console where
 
 import qualified Data.Text as Text
-import           Data.List
 import           Data.Foldable
-
 import           System.Directory
-
 import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
 import           Core.Web.Unity
 import           Core.Data.Unity
-
 import           Control.Concurrent
 import           Control.Monad
-
 import           Utils.Config
-
+import qualified Utils.Misc as Misc
 import           Plugin.BaikeQuerier
 import           Plugin.NoteSaver
 import           Plugin.Timer
@@ -33,9 +28,9 @@ getHandler cmdHeader =
     "svnote" -> saveNote
     "note" -> queryNote
 
-    "timer" -> addTimer
-    "cxltimer" -> cancelTimer
-    "pd" -> setPomodoro
+--    "timer" -> addTimer
+--    "cxltimer" -> cancelTimer
+--    "pd" -> setPomodoro
 
     "dc" -> processDiceRolling
 
@@ -93,17 +88,16 @@ checkPluginEventsIn1Day config = forever $ do
   traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay (oneMin*60*24)
 
--- | "Delay" is in the unit of minutes.
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config =
   traverse_ (\msg -> sendTextMsg msg config >> threadDelay (delay*oneMin))
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (_, update) = do
-  let helps = (mconcat.intersperse "\n")
+  let helps = Misc.unlines $ mconcat
                  [ baikeHelps
                  , noteHelps
-                 , timerHelps
+  --               , timerHelps
                  , diceHelps
                  , solidotHelps
                  , snaoHelps

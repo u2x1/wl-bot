@@ -13,7 +13,7 @@ makeReqFromUpdate update =
   UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update)
 
 makeUpdateFromTG :: T.Update -> Maybe UN.Update
-makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> userNick <*> chatId <*> pure msgTxt <*> Nothing <*> msgType <*> msgId
+makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> userNick <*> chatId <*> pure msgTxt <*> Just Nothing <*> msgType <*> msgId
   where msg      = T.message tgUpdate
         userId   = T.user_id         . T.from <$> msg
         msgId    = T.message_id               <$> msg

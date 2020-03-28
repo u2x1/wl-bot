@@ -35,9 +35,7 @@ processDiceRolling (cmdBody, update) =
            _ <- logWT Info $ "Dice " <> show diceTup <> " generated from " <> show (user_id update)
            pure [makeReqFromUpdate update $ Text.pack
              ("<" <> show (fst diceTup) <> "D" <> show (snd diceTup) <> "> " <> show (sum dice) <> if fst diceTup > 1 then "\n骰子依次为: " <> show dice else "")]
-    Nothing -> pure [makeReqFromUpdate update diceHelps]
+    Nothing -> pure []
 
-diceHelps :: Text.Text
-diceHelps = Text.unlines [ "====DiceHelper===="
-                         , "/dc DICE: DICE表示骰子类型以及数目。(/dc d6是一个六面骰子；/dc 2d12是两个十二面骰子)"
-                         ]
+diceHelps :: [Text.Text]
+diceHelps = ["{dc DICE} DICE表示骰子类型以及数目。(/dc d6是一个六面骰子；/dc 2d12是两个十二面骰子)"]

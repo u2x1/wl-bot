@@ -9,9 +9,10 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 ## What it can do
 
 - Search entries from Baidu Baike (/bk)
-- Save notes (/svnote|/note)
+- Save notes (/svnote /note)
 - Pomodoro (/pd)
 - Roll dice (/dc)
+- Search pics (/sp /asc)
 
 ## How to use it
 
@@ -25,6 +26,8 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
       "cqServer":"",
       "thisServer":"",
       "port":8443,
+      "ws_host":"",
+      "ws_port":6700
    }
    ```
 
@@ -34,6 +37,8 @@ The program uses the [coolq-http-api](https://github.com/richardchien/coolq-http
 | thisServer | This server address used for Webhook | "https://yourserver"     |
 | cqServer   | CoolQ server address for API calling | "http://localhost:5700"  |
 | tgbotToken | Token for Telegram Bot API           |                          |
+| ws\_host   | CoolQ WebSocket listening address    |                          |
+| ws\_port   | CoolQ WebSocket listening port       |                          |
 
 
 3. Enable Coolq **Http API** plugin, set the config of the plugin:

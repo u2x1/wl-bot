@@ -6,7 +6,7 @@ import           Core.Type.Unity.Request      as UR
 import           Core.Data.Unity
 
 import           Utils.Logging
-import           Utils.Misc                            (searchBetweenBL)
+import qualified Utils.Misc as Misc
 
 import           Network.Wreq
 import           Control.Lens
@@ -18,7 +18,7 @@ import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
 
 getFstUrl :: BL.ByteString -> Maybe String
-getFstUrl content = fixUrl $ UTF8.toString <$> searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 content)
+getFstUrl content = fixUrl $ UTF8.toString <$> Misc.searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 content)
   where fixUrl = fmap ("https://baike.baidu.com/item" ++)
 
 getWords :: ByteString -> [ByteString]
@@ -45,7 +45,7 @@ runBaiduSearch query = do
                      "已为您找到一个词条，但此词条无摘要。查看此处:\n" <> realUrl)
         Just resultText  -> (pure.TextL.toStrict.decodeUtf8.concatWord.getWords) resultText
   where
-    getFirstPara = searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
+    getFirstPara = Misc.searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]
 
 processQuery :: (Text.Text, Update) -> IO [SendMsg]
@@ -56,10 +56,9 @@ processQuery (cmdBody, update) =
        logWT Info $
          "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
        pure [makeReqFromUpdate update result]
-     else pure [makeReqFromUpdate update baikeHelps]
+     else pure []
     where
       content = Text.strip cmdBody
 
-baikeHelps :: Text.Text
-baikeHelps = Text.unlines [ "====BaikeQuerier===="
-                          , "/bk ENTRYNAME: 从baike.baidu.com查询词条"]
+baikeHelps :: [Text.Text]
+baikeHelps = ["{bk ENTRY} 从baike.baidu.com查询词条"]

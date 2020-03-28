@@ -8,18 +8,21 @@ import           Control.Lens
 import qualified Data.Text as Text
 import           Data.Aeson
 import qualified Data.ByteString.Lazy as BL
-import Control.Exception
+import           Control.Exception
 import           Core.Type.Unity.Update  as UU
 import           Core.Type.Unity.Request as UR
 import           Utils.Logging
+import           Utils.Misc as Misc
 import           Core.Data.Unity
+
+import           Plugin.NHentaiQuerier
 
 type Similarity = Text.Text
 type Url        = Text.Text
 runSauceNAOSearch :: String -> Text.Text -> IO (Either String SnaoResult)
 runSauceNAOSearch apiKey imgUrl = do
-  r <- (try $ Wreq.get $
-                  snaoHost <> "?db=999&output_type=2&numres=1&api_key=" <> apiKey <> "&url=" <> Text.unpack imgUrl) :: IO (Either SomeException (Response BL.ByteString))
+  r <- try.Wreq.get $
+        snaoHost <> "?db=999&output_type=2&numres=1&api_key=" <> apiKey <> "&url=" <> Text.unpack imgUrl :: IO (Either SomeException (Response BL.ByteString))
   case r of
     Right realR -> case eitherDecode $ realR ^. responseBody of
                      Right x -> (pure.Right) x
@@ -34,33 +37,37 @@ processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
    case message_image_urls update of
      Just imgUrls -> do
-       result <- runSauceNAOSearch "" $ head imgUrls
+       result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls
        logWT Info $
          "SauceNAO Query: [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
        case result of
          Right rst ->
            case (sr_ext_url.head.sr_results) rst of
              Just extUrls ->
-               pure [makeReqFromUpdate update $ Text.unlines
+               pure [makeReqFromUpdate update $ Misc.unlines
                   [ "[相似度] " <> (sr_similarity.head.sr_results) rst
                   , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
-                  , "[图源] "   <> head extUrls
-                  , "[剩余次数] " <> Text.pack (show (sh_short_remaining rst))]]
+                  , "[图源] "   <> head extUrls]]
              _ -> case (sr_doujinshi_name.head.sr_results) rst of
-                    Just dn ->
-                      pure [makeReqFromUpdate update $ Text.unlines
-                         [ "[相似度] " <> (sr_similarity.head.sr_results) rst
-                         , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
-                         , "[本子名] " <> dn
-                         , "[剩余次数] " <> Text.pack (show (sh_short_remaining rst))]]
-                    _ -> pure [makeReqFromUpdate update $
-                               "该图片没有来源，也许你想看看这个:" <> (sr_thumbnail.head.sr_results) rst]
+                    Just dn -> do
+                      n <- getNHentaiBookId dn
+                      let nh = case n of
+                                  Just nhentaiInfo -> 
+                                    [[ "<NHentai搜索结果>"
+                                    , "[标题] " <> snd nhentaiInfo
+                                    , "" <> "https://nhentai.net/g/" <> fst nhentaiInfo]]
+                                  _ -> [[]]
+                      pure $ makeReqFromUpdate update.Misc.unlines <$>
+                          [ "[相似度] " <> (sr_similarity.head.sr_results) rst
+                          , "[缩略图] " <> (sr_thumbnail.head.sr_results) rst
+                          , "[本子名] " <> dn] : nh
+                        
+                    _ -> pure []
          Left x -> pure [makeReqFromUpdate update $ Text.pack x]
-     _ -> pure [makeReqFromUpdate update snaoHelps]
+     _ -> pure []
 
-snaoHelps :: Text.Text
-snaoHelps = Text.unlines [ "====SauceNAOSearcher===="
-                         , "/sp<PIC>: 从SauceNAO搜索一张图片。"]
+snaoHelps :: [Text.Text]
+snaoHelps = ["{sp<PIC>} 从saucenao.net搜索一张图片。"]
 
 data SnaoResult = SnaoResult {
     sh_short_remaining :: Int

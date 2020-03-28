@@ -11,6 +11,7 @@ import           Data.Aeson
 import           Core.Data.Unity
 import           Core.Type.Telegram.Update as TG
 import           Core.Type.CoolQ.Update    as CQ
+--import qualified Data.Text.Lazy as T
 import           Core.Plugin.Console
 import           Utils.Config
 import           Utils.Logging
@@ -19,6 +20,8 @@ app :: Config -> WS.Connection -> IO b
 app config conn = do
     logWT Info "WebSocket connected."
     forever $ do
+--        m <- WS.receiveData conn
+--        logWT Info $ T.unpack m
         msg <- decode <$> WS.receiveData conn :: IO (Maybe CQ.Update)
         case msg of
           Just originUpdate ->
@@ -43,7 +46,7 @@ main = do
 runServer :: Config -> IO ()
 runServer config = do
   _ <- checkPluginRequirements
-  _ <- liftIO $ forkIO (checkPluginEventsIn1Min config)
+--  _ <- liftIO $ forkIO (checkPluginEventsIn1Min config)
   _ <- liftIO $ forkIO (checkPluginEventsIn1Day config)
 
   _ <- liftIO $ forkIO (WS.runClient (ws_host config) (ws_port config) "/" (app config))
