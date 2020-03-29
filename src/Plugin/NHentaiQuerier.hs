@@ -4,6 +4,7 @@ module Plugin.NHentaiQuerier where
 
 import qualified Data.Text as Text
 import           Data.Aeson
+import           Data.Aeson.Types
 import           Utils.Json
 import           Utils.Misc as Misc
 import           Core.Type.Unity.Request
@@ -15,6 +16,7 @@ import           Network.Wreq as Wreq
 import           Control.Lens
 import           Control.Monad
 import           Data.List
+import           Data.Foldable
 
 type Title = Text.Text
 type Id    = Text.Text
@@ -30,13 +32,13 @@ getNHentaiBookId bName = do
   let opts = defaults & param "query" .~ [bName]
   r <- Wreq.getWith opts $ "https://nhentai.net/api/galleries/search"
   pure $
-    either' (eitherDecode $ r ^. responseBody) (pure Nothing) $ (\nh ->
+    either' (eitherDecode $ r ^. responseBody) (\e -> Just (Text.pack e,"")) $ (\nh ->
       maybe' (nh_result nh) Nothing (\results -> Just $
         maybe' (find (\x -> elem "chinese" (nh_tags x)) results)
           (getInfo $ head results)
           (\finalResult -> getInfo finalResult)))
   where
-    getInfo x = (,) ((nh_id) x) (nh_title x)
+    getInfo x = (,) ((nh_title) x) (nh_id x)
 
 processNHentaiQuery :: (Text.Text, Update) -> IO [SendMsg]
 processNHentaiQuery (cmdBody, update) =
@@ -68,9 +70,11 @@ instance FromJSON NHentaiResult where
   parseJSON = withObject "NHentaiResult" $ \v -> NHentaiResult
     <$> ((v .: "id") >>= parseId)
     <*> ((v .: "title") >>= (.: "japanese"))
-    <*> (v .: "tags" >>= (.: "name"))
+    <*> ((v .: "tags" :: Parser Array) >>=
+      traverse parseJSON . toList >>=
+        traverse (.: "name") )
 
-parseId :: MonadPlus f => Value -> f Text.Text
+parseId :: Value -> Parser Text.Text
 parseId (Number o) = pure $ (fst . Text.breakOn ".") $ Text.pack $ show o
 parseId (String o) = pure o
 parseId _ = mzero

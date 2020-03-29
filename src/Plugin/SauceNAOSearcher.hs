@@ -26,7 +26,7 @@ runSauceNAOSearch apiKey imgUrl = do
                       & param "numres" .~ ["1"]
                       & param "api_key" .~ [apiKey]
                       & param "url" .~ [imgUrl]
-  r <- try $ Wreq.getWith opts "https://saucenao.com/search.php" 
+  r <- try $ Wreq.getWith opts "https://saucenao.com/search.php"
                 :: IO (Either SomeException (Response BL.ByteString))
   case r of
     Right realR -> case eitherDecode $ realR ^. responseBody of
@@ -50,14 +50,11 @@ processSnaoQuery (_, update) =
              Just extUrls -> pure $ [ "[相似度] " <> sr_similarity fstRst
                                     , "[缩略图] " <> sr_thumbnail fstRst
                                     , "[图源] " <> head extUrls]
-             _ -> case sr_doujinshi_name fstRst of
-                    Just dn -> do
-                      n <- getNHentaiBookId dn
-                      pure $ ["[本子名] " <> dn] <> 
-                         maybe' n [] (\info ->
-                              ["[NHentai资源]" <> "https://nhentai.net/g/" <> fst info])
-                        
-                    _ -> pure []))
+             _ -> maybe' (sr_doujinshi_name fstRst) (pure []) (\dn -> do
+                   n <- getNHentaiBookId dn
+                   pure $ ["[本子名] " <> dn] <>
+                     maybe' n [] (\info ->
+                          ["[链接]" <> "https://nhentai.net/g/" <> snd info]))))
 
 snaoHelps :: [Text.Text]
 snaoHelps = ["{sp<PIC>} 从saucenao.net搜索一张图片。"]
