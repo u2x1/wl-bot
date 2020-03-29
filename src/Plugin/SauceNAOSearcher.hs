@@ -39,7 +39,7 @@ runSauceNAOSearch apiKey imgUrl = do
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
-   maybe' (message_image_urls update) (pure []) (\imgUrls -> do
+   maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls -> do
        result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls
        logWT Info $
          "SauceNAO [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
@@ -57,7 +57,7 @@ processSnaoQuery (_, update) =
                           ["[链接]" <> "https://nhentai.net/g/" <> snd info]))))
 
 snaoHelps :: [Text.Text]
-snaoHelps = ["{sp<PIC>} 从saucenao.net搜索一张图片。"]
+snaoHelps = ["/sp<PIC>: 从saucenao.net搜索一张图片。"]
 
 data SnaoResults = SnaoResults {
     sh_short_remaining :: Int

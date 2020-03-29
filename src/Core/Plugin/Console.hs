@@ -15,6 +15,7 @@ import qualified Utils.Misc as Misc
 import           Plugin.BaikeQuerier
 import           Plugin.NoteSaver
 import           Plugin.Timer
+import           Plugin.JavDBSearcher
 import           Plugin.DiceHelper
 import           Plugin.SolidotFetcher
 import           Plugin.SauceNAOSearcher
@@ -41,6 +42,8 @@ getHandler cmdHeader =
     "sp" -> processSnaoQuery
     "asc" -> processAscii2dSearch
     "nht" -> processNHentaiQuery
+
+    "fh" -> processMagnetQuery
 
     "help" -> getCommandHelps
     _     -> pure $ pure []

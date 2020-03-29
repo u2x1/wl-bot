@@ -36,7 +36,7 @@ processAscii2dSearch (_, update) =
                   [ "[颜色搜索] " <> fst rst
                   , "[特征搜索] " <> snd rst]]
          _ -> pure [makeReqFromUpdate update "无结果。"]
-     _ -> pure []
+     _ -> pure [makeReqFromUpdate update "无效图片。"]
 
 a2dHelps :: [Text.Text]
 a2dHelps = ["{asc<PIC>} 从ascii2d.net搜索一张图片。"]
