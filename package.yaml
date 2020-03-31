@@ -35,6 +35,10 @@ dependencies:
 - directory
 - websockets
 - network
+- Rasterific
+- JuicyPixels
+- FontyFruity
+- base64-bytestring
 
 library:
   source-dirs: src

@@ -4,3 +4,4 @@ wl-bot.cabal
 config.json
 test/serverTests.sh
 wldata/
+deng.ttf

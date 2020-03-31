@@ -14,27 +14,19 @@ import qualified Data.Text.IO                as Text
 import qualified Data.Text.Lazy              as TextL
 import           Data.Text.Lazy.Encoding
 import qualified Data.ByteString.Lazy        as BL
-import qualified Data.ByteString             as BS
-import           Data.ByteString.Lazy.Search
 import           Data.List
 import           Data.Maybe
 import           Data.Either
+import           Utils.Misc
 
 type Title       = BL.ByteString
 type Link        = BL.ByteString
 type Description = BL.ByteString
 
-getAllBetween :: BS.ByteString -> BS.ByteString -> BL.ByteString -> [BL.ByteString]
-getAllBetween _ _ "" = []
-getAllBetween left right content =
-  let matchLeft  = snd $ breakAfter left content
-      matchRight = breakOn right matchLeft in
-  fst matchRight : getAllBetween left right (snd matchRight)
-
 getSolidotContent :: IO [(Title, Link, Description)]
 getSolidotContent = do
   r <- get "https://www.solidot.org/index.rss"
-  pure $ splitEveryThree $ drop 1 $ getAllBetween "CDATA[" "]]" (r ^. responseBody)
+  pure $ splitEveryThree $ drop 1 $ searchAllBetweenBL "CDATA[" "]]" (r ^. responseBody)
 
 
 splitEveryThree :: [a] -> [(a, a, a)]
@@ -42,7 +34,7 @@ splitEveryThree (x:y:z:rest) = (x,y,z):splitEveryThree rest
 splitEveryThree _ = []
 
 getElemContent :: BL.ByteString -> BL.ByteString
-getElemContent = mconcat . getAllBetween ">" "<" . (">" <>) . (<> "<")
+getElemContent = mconcat . searchAllBetweenBL ">" "<" . (">" <>) . (<> "<")
 
 rmSubscribe :: (Text.Text, Update) -> IO [SendMsg]
 rmSubscribe (_, update) = do

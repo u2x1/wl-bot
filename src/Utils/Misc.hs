@@ -20,5 +20,18 @@ searchBetweenText left right content =
   let fstround = snd $ Text.breakOn left content in
       checkEmpty $ fst (Text.breakOn right fstround)
 
+searchAllBetweenBL :: BS.ByteString -> BS.ByteString -> BL.ByteString -> [BL.ByteString]
+searchAllBetweenBL _ _ "" = []
+searchAllBetweenBL left right content =
+  let matchLeft  = snd $ BL.breakAfter left content
+      matchRight = BL.breakOn right matchLeft in
+  fst matchRight : searchAllBetweenBL left right (snd matchRight)
+
 unlines :: [Text.Text] -> Text.Text
 unlines = mconcat.List.intersperse "\n"
+
+maybe' :: Maybe a -> c -> (a -> c) -> c
+maybe' = flip $ flip <$> maybe
+
+either' :: Either a b -> (a -> c) -> (b -> c) -> c
+either' = flip $ flip <$> either

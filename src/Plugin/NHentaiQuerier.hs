@@ -21,12 +21,6 @@ import           Data.Foldable
 type Title = Text.Text
 type Id    = Text.Text
 
-either' :: Either a b -> (a -> c) -> (b -> c) -> c
-either' = flip $ flip <$> either
-
-maybe' :: Maybe a1 -> a2 -> (a1 -> a2) -> a2
-maybe' = flip $ flip <$> maybe
-
 getNHentaiBookId :: Title -> IO (Maybe (Title, Id))
 getNHentaiBookId bName = do
   let opts = defaults & param "query" .~ [bName]
@@ -48,7 +42,7 @@ processNHentaiQuery (cmdBody, update) =
          "NHentai query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
        r <- getNHentaiBookId $ content
        case r of
-         Just result -> let msg = Misc.unlines ["[标题] " <> fst result, "[链接] " <> snd result] in
+         Just result -> let msg = Misc.unlines ["[标题] " <> fst result, "[链接] https://nhentai.net/g/" <> snd result] in
                           pure [makeReqFromUpdate update msg]
          Nothing -> pure [makeReqFromUpdate update "无结果。"]
      else pure []

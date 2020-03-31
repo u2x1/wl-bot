@@ -20,6 +20,7 @@ import           Plugin.DiceHelper
 import           Plugin.SolidotFetcher
 import           Plugin.SauceNAOSearcher
 import           Plugin.NHentaiQuerier
+import           Plugin.WAITSearcher
 import           Plugin.Ascii2dSearcher
 
 getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
@@ -44,6 +45,7 @@ getHandler cmdHeader =
     "nht" -> processNHentaiQuery
 
     "fh" -> processMagnetQuery
+    "am" -> processWAITQuery
 
     "help" -> getCommandHelps
     _     -> pure $ pure []
