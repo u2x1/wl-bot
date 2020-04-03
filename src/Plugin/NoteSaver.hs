@@ -45,7 +45,3 @@ saveNote (cmdBody, update) =
 
 noteRqmt :: [String]
 noteRqmt = fmap ("wldata/" <> ) ["NT-notes.txt"]
-
-noteHelps :: [Text.Text]
-noteHelps = ["{svnote NAME CONTENT} 将笔记保存到服务器"
-            , "{note NAME} 查询一条存在的笔记"]

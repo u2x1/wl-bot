@@ -52,8 +52,8 @@ runBaiduSearch query = do
                     & param "cl" .~ ["3"] & param "rn" .~ ["100"]
 
 
-processQuery :: (Text.Text, Update) -> IO [SendMsg]
-processQuery (cmdBody, update) =
+processBaiduQuery :: (Text.Text, Update) -> IO [SendMsg]
+processBaiduQuery (cmdBody, update) =
   if content /= ""
      then do
        result <- runBaiduSearch content
@@ -63,6 +63,3 @@ processQuery (cmdBody, update) =
      else pure []
     where
       content = Text.strip cmdBody
-
-baikeHelps :: [Text.Text]
-baikeHelps = ["{bk ENTRY} 从baike.baidu.com查询词条"]

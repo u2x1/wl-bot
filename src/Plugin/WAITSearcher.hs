@@ -47,7 +47,7 @@ processWAITQuery (_, update) =
            , "[季度] " <> season
            , "[位置] #" <> Text.pack episode <> " " <> toTime atTime]]))
         where
-          toTime x = Text.pack $ (show $ div (round x) 60) <> ":" <> (show $ mod (round x) 60)
+          toTime x = Text.pack $ (show (div (round x) 60 :: Int)) <> ":" <> (show (mod (round x) 60 :: Int))
 
 data WAITResults = WAITResults {
     wt_docs :: [WAITResult]

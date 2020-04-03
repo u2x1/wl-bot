@@ -99,8 +99,3 @@ checkNewOfSolidot = do
 
 sfRqmt :: [String]
 sfRqmt = map ("wldata/" <>) ["SF-content.txt", "SF-subscriber.txt"]
-
-solidotHelps :: [Text.Text]
-solidotHelps = [ "{subsd}: 订阅solidot.org的新闻。"
-               , "{cxlsubsd}: 取消对Solidot的订阅。"
-               ]

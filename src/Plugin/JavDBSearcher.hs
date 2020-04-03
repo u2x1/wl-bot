@@ -21,8 +21,8 @@ getMagnet :: BL.ByteString -> Maybe Text.Text
 getMagnet content = fixUrl $ (decodeUtf8 . BL.toStrict) <$> Misc.searchBetweenBL "magnet:?xt=" "\"" (BL.drop 500 content)
   where fixUrl = fmap ("magnet:?xt=" <>)
 
-runMagnetSearch :: Text.Text -> IO (Maybe Text.Text)
-runMagnetSearch query = do
+runJavDBSearch :: Text.Text -> IO (Maybe Text.Text)
+runJavDBSearch query = do
   result <- getWith opts $ "https://javdb4.com/search"
   case getFstUrl (result ^. responseBody) of
     Nothing      -> pure Nothing
@@ -33,11 +33,11 @@ runMagnetSearch query = do
         Just magnet -> pure $ Just magnet
     where opts = defaults & param "q" .~ [query]
 
-processMagnetQuery :: (Text.Text, Update) -> IO [SendMsg]
-processMagnetQuery (cmdBody, update) =
+processJavDBQuery :: (Text.Text, Update) -> IO [SendMsg]
+processJavDBQuery (cmdBody, update) =
   if content /= ""
      then do
-       result <- runMagnetSearch content
+       result <- runJavDBSearch content
        logWT Info $
          "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
        case result of

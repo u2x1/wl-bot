@@ -12,6 +12,8 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import Data.ByteString.Lazy.Search as BL
 import Control.Concurrent
 
+import Plugin.Pic
+
 get10TrtLinks :: String -> IO (Maybe [String])
 get10TrtLinks keyword = do
   r <- get $ "https://www.torrentkitty.tv/search/" <> keyword
@@ -30,7 +32,7 @@ getTrtInfo url = do
                      (searchAllBetweenBL "d class=\"size\">" "<" rawHtml)
   pure $ TrtInfo <$> tName <*> tDate <*> pure tFiles
 
-generateTrtTexts :: String -> IO [String]
+generateTrtTexts :: String -> IO [[(String, FontDescrb)]]
 generateTrtTexts keyword = do
   trtLinks <- get10TrtLinks keyword
   maybe' trtLinks (pure []) (\links -> do
@@ -39,18 +41,21 @@ generateTrtTexts keyword = do
       info <- getTrtInfo link
       writeChan ch $ maybe' info [] concatTrtInfo) links
     (mconcat.addNumber) <$> replicateM (length links) (readChan ch))
-  where addNumber xss = go xss 0
-        go :: [[String]] -> Int -> [[String]]
-        go (x:xs) cnt = (modifyHead x (("["<>show cnt<>"] ") <>)) : go xs (cnt + 1)
-        go [] _ = []
-        modifyHead (x:xs) f = (f x) : xs
+  where addNumber = go 0
+        go :: Int -> [[[(String,FontDescrb)]]] -> [[[(String, FontDescrb)]]]
+        go cnt (x:xs) = (modifyHead x (("["<>show cnt<>"] ") <>)) : go (cnt + 1) xs
+        go _ [] = []
+        modifyHead (((x,y):ys):xs) f = ((f x, y):ys) : xs
         modifyHead [] _ = []
 
+defaultFont = FontDescrb FontBlack FZHeiTi
+redFont = FontDescrb FontRed FZHeiTi
 
-concatTrtInfo :: TrtInfo -> [String]
-concatTrtInfo info = map toString $
-  [" " <> trt_name info <> "\t\t-- " <> trt_date info] <>
-  (map (uncurry (\a b -> "\t|- " <> a <> "\t\t" <> b)) $
+concatTrtInfo :: TrtInfo -> [[(String, FontDescrb)]]
+concatTrtInfo info = map (map (\(x, y) -> (toString x, y))) $
+  [[((trt_name info <> "\t\t"), defaultFont)
+  , (trt_date info, redFont)]] <>
+  (map (uncurry (\a b -> [("\t\t|- " <> a <> "\t\t", defaultFont), (b, redFont)])) $
     filter (\(x,_) -> (snd $ BL.breakAfter "BitComet" x) == "") $ trt_files info)
 
 type FileName = BL.ByteString

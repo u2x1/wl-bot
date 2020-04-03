@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.SauceNAOSearcher
---  (runSauceNAOSearch, processSnaoQuery, snaoHelps)
-where
+module Plugin.SauceNAOSearcher where
 
 import           Network.Wreq as Wreq
 import           Control.Lens
@@ -55,9 +53,6 @@ processSnaoQuery (_, update) =
                    pure $ ["[本子名] " <> dn] <>
                      maybe' n [] (\info ->
                           ["[链接]" <> "https://nhentai.net/g/" <> snd info]))))
-
-snaoHelps :: [Text.Text]
-snaoHelps = ["/sp<PIC>: 从saucenao.net搜索一张图片。"]
 
 data SnaoResults = SnaoResults {
     sh_short_remaining :: Int

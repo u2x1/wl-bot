@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Web.Scotty                as Scotty
 import qualified Network.WebSockets        as WS
-import           Network.HTTP.Types                    (status500, status200)
+import           Network.HTTP.Types                    (status200, status204)
 import           Control.Monad                         (forever)
 import           Control.Monad.IO.Class                (liftIO)
 import           Control.Exception                     (try, SomeException)
@@ -60,4 +60,4 @@ handleTGMsg config =
       Just update -> do
         _ <- liftIO $ forkIO (commandProcess update config)
         status status200
-      Nothing     -> status status500
+      Nothing     -> status status204

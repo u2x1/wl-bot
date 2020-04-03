@@ -36,6 +36,3 @@ processDiceRolling (cmdBody, update) =
            pure [makeReqFromUpdate update $ Text.pack
              ("<" <> show (fst diceTup) <> "D" <> show (snd diceTup) <> "> " <> show (sum dice) <> if fst diceTup > 1 then "\n骰子依次为: " <> show dice else "")]
     Nothing -> pure []
-
-diceHelps :: [Text.Text]
-diceHelps = ["{dc DICE} DICE表示骰子类型以及数目。(/dc d6是一个六面骰子；/dc 2d12是两个十二面骰子)"]

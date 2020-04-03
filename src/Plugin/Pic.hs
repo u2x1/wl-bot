@@ -2,36 +2,44 @@ module Plugin.Pic where
 
 import Codec.Picture( PixelRGBA8( .. ), writePng )
 import Graphics.Rasterific
-import Graphics.Text.TrueType        (Font, loadFontFile )
+import Graphics.Text.TrueType
 import Graphics.Rasterific.Texture
 import Utils.Logging
 
-picTest :: IO ()
-picTest = do
-  let white = PixelRGBA8 255 255 255 255
-      drawColor = PixelRGBA8 0 0x86 0xc1 255
-      recColor = PixelRGBA8 0xFF 0x53 0x73 255
-      img = renderDrawing 400 200 white $
-         withTexture (uniformTexture drawColor) $ do
-            fill $ circle (V2 0 0) 30
-            stroke 4 JoinRound (CapRound, CapRound) $
-                   circle (V2 400 200) 40
-            withTexture (uniformTexture recColor) .
-                   fill $ rectangle (V2 100 100) 200 100
+blackTexture = Just . uniformTexture $ PixelRGBA8 0 0 0 255
+blueTexture = Just . uniformTexture $ PixelRGBA8 0 0 255 255
+redTexture =   Just . uniformTexture $ PixelRGBA8 255 0 0 255
 
-  writePng "yourimage.png" img
-
-drawTextArray :: [String] -> IO ()
+drawTextArray :: [[(String, FontDescrb)]] -> IO ()
 drawTextArray texts = do
-  fontErr <- loadFontFile "deng.ttf"
-  case fontErr of
+  font_FZHeiTi <- loadFontFile $ slcFont FZHeiTi
+  font_MSYaHei <- loadFontFile $ slcFont MSYaHei
+  case font_FZHeiTi of
     Left err -> logErr "Drawing pic" err
-    Right font ->
-      writePng "text.png" .
-        renderDrawing 2000 (11 + 22 * length texts) (PixelRGBA8 255 255 255 255) .
-          withTexture (uniformTexture $ PixelRGBA8 0 0 0 255) $ do
-            foldr (>>) (pure ()) (makeTextList texts 1 font)
+    Right fzHeiTi ->
+      case font_MSYaHei of
+        Left err -> logErr "Drawing pic" err
+        Right msYaHei ->
+          let makeTextList cnt (x:xs) = (printTextRanges (V2 5 (22*cnt)) $
+                fmap (\(text, (FontDescrb color font)) ->
+                  TextRange (case font of
+                               FZHeiTi -> fzHeiTi
+                               MSYaHei -> msYaHei)
+                    (PointSize 16) text (slcColor color)) x) : (makeTextList (cnt+1) xs)
+              makeTextList _ [] = [] in
+          writePng "text.png" .
+            renderDrawing 2000 (11 + 22 * length texts) (PixelRGBA8 255 255 255 255) .
+              withTexture (uniformTexture $ PixelRGBA8 0 0 0 255) $ do
+                foldr (>>) (pure ()) (makeTextList 1 texts)
 
-makeTextList :: [String] -> Float -> Font -> [Drawing px ()]
-makeTextList (x:xs) cnt font = (printTextAt font (PointSize 16) (V2 0 (22*cnt)) x) : (makeTextList xs (cnt+1) font)
-makeTextList [] _ _ = []
+
+data FontDescrb = FontDescrb FontColor FontType
+
+data FontColor = FontRed | FontBlack | FontBlue
+data FontType  = FZHeiTi | MSYaHei
+
+slcColor FontRed = redTexture
+slcColor FontBlue = blueTexture
+slcColor FontBlack = blackTexture
+slcFont FZHeiTi = "fonts/fz_hei_ti.ttf"
+slcFont MSYaHei = "fonts/ms_ya_hei.ttf"

@@ -17,38 +17,15 @@ import           Plugin.NoteSaver
 import           Plugin.Timer
 import           Plugin.JavDBSearcher
 import           Plugin.DiceHelper
+import           Plugin.BilibiliHelper
 import           Plugin.SolidotFetcher
 import           Plugin.SauceNAOSearcher
 import           Plugin.NHentaiQuerier
 import           Plugin.WAITSearcher
 import           Plugin.Ascii2dSearcher
 
-getHandler :: Text.Text -> ((Text.Text, Update) -> IO [SendMsg])
-getHandler cmdHeader =
-  case Text.toLower $ Text.drop 1 cmdHeader of
-    "bk" -> processQuery
-
-    "svnote" -> saveNote
-    "note" -> queryNote
-
---    "timer" -> addTimer
---    "cxltimer" -> cancelTimer
---    "pd" -> setPomodoro
-
-    "dc" -> processDiceRolling
-
-    "subsd" -> addSubscriber
-    "cxlsubsd" -> rmSubscribe
-
-    "sp" -> processSnaoQuery
-    "asc" -> processAscii2dSearch
-    "nht" -> processNHentaiQuery
-
-    "fh" -> processMagnetQuery
-    "am" -> processWAITQuery
-
-    "help" -> getCommandHelps
-    _     -> pure $ pure []
+getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
+getHandler cmdHeader = fst <$> lookup (Text.toLower $ Text.drop 1 cmdHeader) commands
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
@@ -57,7 +34,9 @@ getMsgs2Send update =
       if Text.head msgTxt == '/' || Text.head msgTxt == '.' || Text.head msgTxt == '。'
          then
            let command = Text.breakOn " " msgTxt in
-           getHandler (fst command) (snd command, update)
+           case getHandler (fst command) of
+             Just handler -> handler (Text.strip $ snd command, update)
+             _ -> pure []
          else pure []
     _ -> pure []
 
@@ -82,13 +61,6 @@ type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
--- | An automatic operation which checks plugin events every 1 minute.
-checkPluginEventsIn1Min :: Config -> IO ()
-checkPluginEventsIn1Min config = forever $ do
-  msgs <- sequence [checkTimer]
-  traverse_ (`sendTextMsg` config) $ mconcat msgs
-  threadDelay oneMin
-
 checkPluginEventsIn1Day :: Config -> IO ()
 checkPluginEventsIn1Day config = forever $ do
   msgs <- sequence [checkNewOfSolidot]
@@ -100,14 +72,27 @@ sendMsgWithDelay delay config =
   traverse_ (\msg -> sendTextMsg msg config >> threadDelay (delay*oneMin))
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
-getCommandHelps (_, update) = do
-  let helps = Misc.unlines $ mconcat
-                 [ baikeHelps
-                 , noteHelps
-  --               , timerHelps
-                 , diceHelps
-                 , solidotHelps
-                 , snaoHelps
-                 , a2dHelps
-                 ]
-  pure [makeReqFromUpdate update helps]
+getCommandHelps (cmdBody, update) =
+  if cmdBody /= ""
+     then case lookup cmdBody commands of
+            Just (_, (_, h)) -> pure [makeReqFromUpdate update ("/" <> cmdBody <> h)]
+            Nothing -> pure [makeReqFromUpdate update "未找到指令。"]
+     else
+       pure [makeReqFromUpdate update $ Misc.unlines $
+         fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands]
+
+commands :: [(Text.Text, (((Text.Text, Update) -> IO [SendMsg]), (Text.Text, Text.Text)))]
+commands =
+  [ ("bk"      , (processBaiduQuery     , ("百科摘要", " ENTRY: 从baike.baidu.com抓取摘要")))
+  , ("svnote"  , (saveNote              , ("笔记"    , " KEY CONTENT: 由机器人上传一条信息到服务器保存")))
+  , ("note"    , (queryNote             , ("笔记"    , " KEY: 查找对应的信息")))
+  , ("subsd"   , (addSubscriber         , ("新闻"    , " : 订阅solidot.org")))
+  , ("cxlsubsd", (rmSubscribe           , ("新闻"    , " : 取消订阅solidot.org")))
+  , ("dc"      , (processDiceRolling    , ("骰子"    , " DICE: 生成随机骰子(如d6,2d10)")))
+  , ("sp"      , (processSnaoQuery      , ("搜图"    , " PIC: 使用图片从saucenao.com搜图")))
+  , ("asc"     , (processAscii2dSearch  , ("搜图"    , " PIC: 使用图片从ascii2d.net搜图")))
+  , ("nht"     , (processNHentaiQuery   , ("搜本子"  , " NAME: 使用本子名从NHentai.net查询本子")))
+  , ("fh"      , (processJavDBQuery     , ("搜番号"  , " NUMBER: 从JavDB查询番号")))
+  , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))
+  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
+  , ("help"    , (getCommandHelps       , ("帮助"    , " <COMMAND>: 查看帮助")))]
