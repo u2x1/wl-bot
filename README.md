@@ -26,7 +26,7 @@ The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) t
       "webhook_server":"",
       "port":8443,
       "ws_host":"",
-      "ws_port":6700
+      "ws_port":6700,
       "mirai_auth_key": "",
       "mirai_qq_id": ""
    }
