@@ -1,0 +1,28 @@
+module Plugin.YandeFetcher where
+
+--import           Core.Type.Unity.Request     as UR
+--import           Core.Data.Unity
+--import           Core.Type.Unity.Update      as UU
+--import           Core.Type.Universal
+--import           Control.Applicative
+--import           Network.Wreq                         (get, responseBody)
+--import           Control.Lens
+--import qualified Data.Text                   as Text
+--import           Data.Text.Read              as Text
+--import qualified Data.Text.IO                as Text
+--import qualified Data.Text.Lazy              as TextL
+--import           Data.Text.Lazy.Encoding
+--import qualified Data.ByteString.Lazy        as BL
+--import           Data.List
+--import           Data.Maybe
+--import           Data.Either
+--import           Utils.Misc
+--
+--type Title       = BL.ByteString
+--type Link        = BL.ByteString
+--type Description = BL.ByteString
+--
+--getSolidotContent :: IO [(Title, Link, Description)]
+--getSolidotContent = do
+--  r <- get "https://www.solidot.org/index.rss"
+--  pure $ searchAllBetweenBL "CDATA[" "]]" (r ^. responseBody)

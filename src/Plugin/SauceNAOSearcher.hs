@@ -37,18 +37,17 @@ runSauceNAOSearch apiKey imgUrl = do
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
-   maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls -> do
-       result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls
+   maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls' -> do
+       result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls'
        logWT Info $
-         "SauceNAO [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
+         "SauceNAO [" <> Text.unpack (head imgUrls') <> "] sending from " <> show (user_id update)
        either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
-         pure . (makeReqFromUpdate update) . Misc.unlines <$>
            let fstRst = head $ sr_results rst in
            case sr_ext_url fstRst of
-             Just extUrls -> pure $ [ "[相似度] " <> sr_similarity fstRst
-                                    , "[缩略图] " <> sr_thumbnail fstRst
-                                    , "[图源] " <> head extUrls]
-             _ -> maybe' (sr_doujinshi_name fstRst) (pure []) (\dn -> do
+             Just extUrls -> pure [makeReqFromUpdate' update (Just [sr_thumbnail fstRst]) $ Just $ Misc.unlines
+                                                        [ "[相似度] " <> sr_similarity fstRst
+                                                        , "[图源] " <> head extUrls]]
+             _ -> (:[]) <$> (makeReqFromUpdate update) . Misc.unlines <$>  maybe' (sr_doujinshi_name fstRst) (pure []) (\dn -> do
                    n <- getNHentaiBookId dn
                    pure $ ["[本子名] " <> dn] <>
                      maybe' n [] (\info ->

@@ -26,10 +26,10 @@ getAscii2dUrl imgUrl = do
 processAscii2dSearch ::  (Text.Text, Update) -> IO [SendMsg]
 processAscii2dSearch (_, update) =
    case message_image_urls update of
-     Just imgUrls -> do
-       result <- getAscii2dUrl $ head imgUrls
+     Just imgUrls' -> do
+       result <- getAscii2dUrl $ head imgUrls'
        logWT Info $
-         "Ascii2d Query: [" <> Text.unpack (head imgUrls) <> "] sending from " <> show (user_id update)
+         "Ascii2d Query: [" <> Text.unpack (head imgUrls') <> "] sending from " <> show (user_id update)
        case result of
          Just rst ->
                pure [makeReqFromUpdate update $ Misc.unlines

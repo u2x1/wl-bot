@@ -14,7 +14,6 @@ import           Utils.Config
 import qualified Utils.Misc as Misc
 import           Plugin.BaikeQuerier
 import           Plugin.NoteSaver
-import           Plugin.Timer
 import           Plugin.JavDBSearcher
 import           Plugin.DiceHelper
 import           Plugin.BilibiliHelper
@@ -47,8 +46,8 @@ commandProcess update config = do
 
 checkPluginRequirements :: IO ()
 checkPluginRequirements = do
-  let rqmt = mconcat [ timerRqmt
-                     , sfRqmt
+  let rqmt = mconcat [
+                       sfRqmt
                      , noteRqmt
                      ]
   de <- doesDirectoryExist "wldata"
@@ -70,6 +69,9 @@ checkPluginEventsIn1Day config = forever $ do
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config =
   traverse_ (\msg -> sendTextMsg msg config >> threadDelay (delay*oneMin))
+
+
+-- Plugin: Help --
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (cmdBody, update) =

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Web.Telegram where
 
+import Control.Lens
 import Network.Wreq
 import Data.Aeson
 import Data.Text
@@ -15,9 +16,8 @@ import Prelude hiding (id)
 
 sendBackTextMsg :: Text -> Update -> Config -> IO (Response ByteString)
 sendBackTextMsg textToSend update config =
-  postTgRequest tgbotTk "sendMessage" $
+  postTgRequest (config ^. tg_token) "sendMessage" $
             toJSON (SendMsg (chat_id update) textToSend)
-  where tgbotTk = tgbotToken config
 
 postTgRequest :: String -> String -> Value -> IO (Response ByteString)
 postTgRequest tgbotTk method = post target

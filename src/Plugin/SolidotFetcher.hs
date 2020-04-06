@@ -40,13 +40,13 @@ rmSubscribe :: (Text.Text, Update) -> IO [SendMsg]
 rmSubscribe (_, update) = do
   fileContent <- Text.readFile (sfRqmt !! 1)
   if snd (Text.breakOn (Text.pack $ show (UU.chat_id update)) fileContent) == ""
-     then do
+     then pure [makeReqFromUpdate update "您不在Solidot的订阅列表内。"]
+     else do
       let subscribers = Text.splitOn "\n" fileContent
           afterRmUsers =
             filter (\user -> snd (Text.breakOn (Text.pack $ show (UU.chat_id update)) user) == "") subscribers
       _ <- Text.writeFile (sfRqmt !! 1) $ (mconcat.intersperse "\n") afterRmUsers
       pure [makeReqFromUpdate update "已取消对Solidot的订阅。"]
-      else pure [makeReqFromUpdate update "您不在Solidot的订阅列表内。"]
 
 addSubscriber :: (Text.Text, Update) -> IO [SendMsg]
 addSubscriber (_, update) = do
@@ -64,9 +64,9 @@ parseSubscriber = do
   fileContent <- Text.readFile (sfRqmt !! 1)
   let subscribers = Text.splitOn " " <$> Text.splitOn "\n" fileContent
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
-  pure $ sequence $ liftA2 uncurry3 (pure SendMsg) infos
+  pure $ (sequence $ liftA2 uncurry3 (pure SendMsg) infos) . Just
   where
-    uncurry3 f (a, b, c) = f a b c
+    uncurry3 f (a, b, c) = f a b c Nothing Nothing
     getSubscriberInfos [userId, plat, targetType] = Just
       ( fromRight 0 $ fst <$> decimal userId
       , case targetType of

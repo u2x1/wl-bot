@@ -1,7 +1,6 @@
 module Utils.Logging where
 
 import Data.Time
-import Control.Concurrent
 import System.IO
 
 data LogTag = Info | Warning | Error | Debug

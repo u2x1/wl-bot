@@ -12,7 +12,7 @@ import           Network.Wreq
 import           Control.Lens
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
 import           Data.ByteString.Lazy         as BL
-import           Data.ByteString.Lazy.Search           (breakOn, breakAfter)
+import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter, replace)
 import qualified Data.Text                    as Text
 import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
@@ -28,7 +28,7 @@ getWords str = fst (breakOn "<" xs) : getWords xs
 
 -- Select fragments that are not equal to "&nbsp;" or started with "\n"
 concatWord :: [ByteString] -> ByteString
-concatWord oStr = s
+concatWord oStr = BL.replace "&nbsp;" (""::ByteString) s
   where s = mconcat $ Prelude.filter
               (\str -> BL.take 2 str /= "\n[")
               oStr

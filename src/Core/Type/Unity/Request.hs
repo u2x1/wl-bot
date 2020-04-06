@@ -6,7 +6,9 @@ import Core.Type.Universal
 
 data SendMsg = SendMsg {
     chat_id :: Integer
-  , msg_type :: MsgType
+  , target_type :: TargetType
   , target_plat :: Platform
-  , text :: Text
+  , reply_id :: Maybe Integer
+  , imgUrls :: Maybe [Text]
+  , text :: Maybe Text
 } deriving (Show)
