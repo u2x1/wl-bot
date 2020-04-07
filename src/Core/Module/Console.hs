@@ -20,6 +20,7 @@ import           Module.DiceHelper
 import           Module.SolidotFetcher
 import           Module.YandeFetcher
 import           Module.SauceNAOSearcher
+import           Module.PixivQuerier
 import           Module.NHentaiQuerier
 import           Module.WAITSearcher
 import           Module.Ascii2dSearcher
@@ -96,5 +97,6 @@ commands =
   , ("nht"     , (processNHentaiQuery   , ("搜本子"  , " NAME: 使用本子名从NHentai.net查询本子")))
   , ("fh"      , (processJavDBQuery     , ("搜番号"  , " NUMBER: 从JavDB查询番号")))
   , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))
+  , ("pid"     , (processPixivQuery     , ("Pixiv ID", " PID: 使用PID从pixiv.cat取得图片")))
 --  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
   , ("help"    , (getCommandHelps       , ("帮助"    , " COMMAND: 查看帮助")))]

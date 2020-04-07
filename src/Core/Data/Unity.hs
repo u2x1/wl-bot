@@ -9,13 +9,18 @@ import           Core.Data.Mirai           as Q
 import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
+makeReqFromUpdate'' :: UN.Update -> Maybe Text.Text -> Maybe Text.Text -> UR.SendMsg
+makeReqFromUpdate'' update =
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing
+
+-- | Make SendMsg from Update with image urls and text.
 makeReqFromUpdate' :: UN.Update -> Maybe [Text.Text] -> Maybe Text.Text -> UR.SendMsg
-makeReqFromUpdate' update =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)
+makeReqFromUpdate' update imgurls txt =
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)imgurls Nothing txt
 
 makeReqFromUpdate :: UN.Update -> Text.Text -> UR.SendMsg
 makeReqFromUpdate update txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing (Just txt)
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing Nothing (Just txt)
 
 makeUpdateFromTG :: T.Update -> Maybe UN.Update
 makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> chatId <*> pure msgTxt <*> Just Nothing <*> msgType <*> msgId

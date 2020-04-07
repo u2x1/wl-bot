@@ -5,7 +5,6 @@ import           Core.Type.Unity.Request     as UR
 import           Core.Data.Unity
 import           Core.Type.Unity.Update      as UU
 import           Core.Type.Universal
-import           Control.Applicative
 import           Network.Wreq                         (get, responseBody)
 import           Control.Lens
 import qualified Data.Text                   as Text
@@ -64,9 +63,9 @@ parseSubscriber = do
   fileContent <- Text.readFile (sfRqmt !! 1)
   let subscribers = Text.splitOn " " <$> Text.splitOn "\n" fileContent
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
-  pure $ (sequence $ liftA2 uncurry3 (pure SendMsg) infos) . Just
+  pure $ (traverse (uncurry3 SendMsg) infos) . Just
   where
-    uncurry3 f (a, b, c) = f a b c Nothing Nothing
+    uncurry3 f (a, b, c) = f a b c Nothing Nothing Nothing
     getSubscriberInfos [userId, plat, targetType] = Just
       ( fromRight 0 $ fst <$> decimal userId
       , case targetType of

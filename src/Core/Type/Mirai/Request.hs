@@ -19,7 +19,8 @@ instance ToJSON SendMRMsg where
 data Message = Message {
     mrc_type :: Text
   , mrc_text :: Maybe Text
-  , mrc_url :: Maybe Text
+  , mrc_url  :: Maybe Text
+  , mrc_path :: Maybe Text
 } deriving (Eq, Show, Generic)
 instance ToJSON Message where
   toJSON = dropToJSON 4
