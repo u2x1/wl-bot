@@ -8,14 +8,20 @@ The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) t
 
 ## What it can do
 
-- Search entries from Baidu Baike (/bk)
-- Save notes (/svnote /note)
-- Roll dice (/dc)
-- Search pics (/sp /asc)
+- Search entries from [Baidu Baike](https://baike.baidu.com/) (`/bk`)
+- Save notes (`/svnote` `/note`)
+- Roll dice (`/dc`)
+- Search image by image using [SauceNAO](https://saucenao.com/) and [Ascii2d](https://ascii2d.net/)(`/sp` `/asc`)
+- Search anime using [WAIT](https://trace.moe/) (`/am`)
+- Using [pixiv.cat](https://pixiv.cat/) to get images by Pixiv id (`/pid`)
+- And some contents that may be not suitable to present..
+
+Get all commands using `/help`.
+
 
 ## How to use it
 
-1. Download the pre-build binary file from [latest release](https://github.com/Nutr1t07/wl-bot/releases/latest).
+1. Download the pre-build binary file from [release](https://github.com/Nutr1t07/wl-bot/releases/).
 
 2. Create `config.json` under the same directory as `wl-bot-exe`:
 
@@ -55,3 +61,15 @@ The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) t
    ```bash
    nohup ./wl-bot-exe &
    ```
+
+# Acknowledgements
+
+- [mirai](https://github.com/mamoe/mirai)
+- [mirai-api-http](https://github.com/mamoe/mirai-api-http)
+- [Baidu Baike](https://baike.baidu.com/)
+- [SauceNAO](https://saucenao.com/)
+- [Ascii2d](https://ascii2d.net/)
+- [WAIT](https://trace.moe/)
+- [pixiv.cat](https://pixiv.cat/)
+- [NHentai](https://nhentai.net/)
+- [JavDB](https://javdb.com/)
