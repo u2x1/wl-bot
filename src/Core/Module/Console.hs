@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Core.Plugin.Console where
+module Core.Module.Console where
 
 import qualified Data.Text as Text
 import           Data.Foldable
@@ -12,16 +12,17 @@ import           Control.Concurrent
 import           Control.Monad
 import           Utils.Config
 import qualified Utils.Misc as Misc
-import           Plugin.BaikeQuerier
-import           Plugin.NoteSaver
-import           Plugin.JavDBSearcher
-import           Plugin.DiceHelper
-import           Plugin.BilibiliHelper
-import           Plugin.SolidotFetcher
-import           Plugin.SauceNAOSearcher
-import           Plugin.NHentaiQuerier
-import           Plugin.WAITSearcher
-import           Plugin.Ascii2dSearcher
+import           Module.BaikeQuerier
+import           Module.NoteSaver
+import           Module.JavDBSearcher
+import           Module.DiceHelper
+--import           Module.BilibiliHelper
+import           Module.SolidotFetcher
+import           Module.YandeFetcher
+import           Module.SauceNAOSearcher
+import           Module.NHentaiQuerier
+import           Module.WAITSearcher
+import           Module.Ascii2dSearcher
 
 getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
 getHandler cmdHeader = fst <$> lookup (Text.toLower $ Text.drop 1 cmdHeader) commands
@@ -44,12 +45,11 @@ commandProcess update config = do
   msgs <- getMsgs2Send update
   traverse_ (`sendTextMsg` config) msgs
 
-checkPluginRequirements :: IO ()
-checkPluginRequirements = do
-  let rqmt = mconcat [
-                       sfRqmt
-                     , noteRqmt
-                     ]
+checkModuleRequirements :: IO ()
+checkModuleRequirements = do
+  let rqmt = mconcat [ sfRqmt
+                     , ydRqmt
+                     , noteRqmt]
   de <- doesDirectoryExist "wldata"
   _ <- if de then pure () else createDirectory "wldata"
   traverse_ (\fileName -> do
@@ -60,18 +60,18 @@ type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
-checkPluginEventsIn1Day :: Config -> IO ()
-checkPluginEventsIn1Day config = forever $ do
-  msgs <- sequence [checkNewOfSolidot]
+checkModuleEventsIn1Day :: Config -> IO ()
+checkModuleEventsIn1Day config = forever $ do
+  msgs <- sequence [checkNewOfSolidot, sendYandePopImgs]
   traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay (oneMin*60*24)
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config =
-  traverse_ (\msg -> sendTextMsg msg config >> threadDelay (delay*oneMin))
+  traverse_ (\msg -> sendTextMsg msg config >> threadDelay delay)
 
 
--- Plugin: Help --
+-- Module: Help --
 
 getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
 getCommandHelps (cmdBody, update) =
@@ -80,8 +80,8 @@ getCommandHelps (cmdBody, update) =
             Just (_, (_, h)) -> pure [makeReqFromUpdate update ("/" <> cmdBody <> h)]
             Nothing -> pure [makeReqFromUpdate update "未找到指令。"]
      else
-       pure [makeReqFromUpdate update $ Misc.unlines $
-         fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands]
+       pure [makeReqFromUpdate update $ "使用/help COMMAND查看详细\n" <> (Misc.unlines $
+         fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands)]
 
 commands :: [(Text.Text, (((Text.Text, Update) -> IO [SendMsg]), (Text.Text, Text.Text)))]
 commands =
@@ -96,5 +96,5 @@ commands =
   , ("nht"     , (processNHentaiQuery   , ("搜本子"  , " NAME: 使用本子名从NHentai.net查询本子")))
   , ("fh"      , (processJavDBQuery     , ("搜番号"  , " NUMBER: 从JavDB查询番号")))
   , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))
-  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
-  , ("help"    , (getCommandHelps       , ("帮助"    , " <COMMAND>: 查看帮助")))]
+--  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
+  , ("help"    , (getCommandHelps       , ("帮助"    , " COMMAND: 查看帮助")))]

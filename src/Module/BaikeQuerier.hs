@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.BaikeQuerier where
+module Module.BaikeQuerier where
 
 import           Core.Type.Unity.Update       as UU
 import           Core.Type.Unity.Request      as UR

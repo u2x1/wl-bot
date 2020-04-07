@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.JavDBSearcher where
+module Module.JavDBSearcher where
 
 import Network.Wreq
 import qualified Data.ByteString.Lazy as BL

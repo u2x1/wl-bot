@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.DiceHelper where
+module Module.DiceHelper where
 
 import qualified Data.Text as Text
 import System.Random

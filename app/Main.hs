@@ -15,7 +15,7 @@ import           Core.Data.Unity
 import           Core.Type.Telegram.Update as TG
 import           Core.Type.Mirai.Update    as MR
 --import qualified Data.Text.Lazy as T
-import           Core.Plugin.Console
+import           Core.Module.Console
 import           Utils.Config
 import           Utils.Misc
 import           Utils.Logging
@@ -41,8 +41,8 @@ runServer oriConfig = do
     maybe' sk (logErr "Setting Mirai session" "Failed" >> return oriConfig) $ \s ->
       return $ set mirai_session_key s oriConfig
 
-  _ <- checkPluginRequirements
-  _ <- liftIO $ forkIO (checkPluginEventsIn1Day config)
+  _ <- checkModuleRequirements
+  _ <- liftIO $ forkIO (checkModuleEventsIn1Day config)
 
 
   _ <- WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config)

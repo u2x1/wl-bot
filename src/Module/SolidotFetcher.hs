@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.SolidotFetcher where
+module Module.SolidotFetcher where
 
 import           Core.Type.Unity.Request     as UR
 import           Core.Data.Unity

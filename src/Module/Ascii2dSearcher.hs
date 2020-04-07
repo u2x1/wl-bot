@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.Ascii2dSearcher where
+module Module.Ascii2dSearcher where
 
 import           Network.Wreq
 import           Utils.Logging

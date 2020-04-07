@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.NoteSaver where
+module Module.NoteSaver where
 
 import           Core.Type.Unity.Update       as UU
 import           Core.Type.Unity.Request      as UR

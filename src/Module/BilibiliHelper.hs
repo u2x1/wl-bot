@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.BilibiliHelper where
+module Module.BilibiliHelper where
 
 import Data.Bits       (xor)
 import Data.Map.Strict ((!), fromList)

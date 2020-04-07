@@ -4,7 +4,7 @@ This is a program used to provide tools for QQ and Telegram groups, written in H
 
 ## How it works
 
-The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) to communicate with _Mirai_, and get updates from Telegram through _Webhook_.
+The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) to communicate with [Mirai](https://github.com/mamoe/mirai), and get updates from Telegram through _Webhook_.
 
 ## What it can do
 
@@ -35,12 +35,12 @@ The program uses the [mirai-api-http](https://github.com/mamoe/mirai-api-http) t
 | Key                 | Description                          | Example Value            |
 |---------------------|--------------------------------------|--------------------------|
 | port                | The port this program listen         | 8443                     |
-| webhook\_server     | Server address used for Webhook      | "https://yourserver"     |
+| webhook\_server     | Server address used for Webhook      | "https://yourserver/"    |
 | mirai\_server       | CoolQ server address for API calling | "http://localhost:5700/" |
 | tg\_token           | Token for Telegram Bot API           |                          |
 | ws\_host            | Mirai WebSocket listening address    |                          |
 | ws\_port            | Mirai WebSocket listening port       |                          |
-| mirai\_auth\_key    | mirai-api-http auth key              | 8443                     |
+| mirai\_auth\_key    | mirai-api-http auth key              |                          |
 | mirai\_qq\_id       | QQ bot id                            |                          |
 
 

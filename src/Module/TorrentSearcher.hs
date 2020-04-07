@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.TorrentSearcher where
+module Module.TorrentSearcher where
 
 import Network.Wreq
-import qualified Data.Text as Text
+--import qualified Data.Text as Text
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
@@ -12,7 +12,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import Data.ByteString.Lazy.Search as BL
 import Control.Concurrent
 
-import Plugin.Pic
+import Module.Pic
 
 get10TrtLinks :: String -> IO (Maybe [String])
 get10TrtLinks keyword = do
@@ -47,8 +47,12 @@ generateTrtTexts keyword = do
         go _ [] = []
         modifyHead (((x,y):ys):xs) f = ((f x, y):ys) : xs
         modifyHead [] _ = []
+        modifyHead ([]:_) _ = []
 
+defaultFont :: FontDescrb
 defaultFont = FontDescrb FontBlack FZHeiTi
+
+redFont :: FontDescrb
 redFont = FontDescrb FontRed FZHeiTi
 
 concatTrtInfo :: TrtInfo -> [[(String, FontDescrb)]]

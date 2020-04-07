@@ -1,4 +1,4 @@
-module Plugin.Pic where
+module Module.Pic where
 
 import Codec.Picture( PixelRGBA8( .. ), writePng )
 import Graphics.Rasterific
@@ -6,9 +6,14 @@ import Graphics.Text.TrueType
 import Graphics.Rasterific.Texture
 import Utils.Logging
 
+blackTexture :: Maybe (Texture PixelRGBA8)
 blackTexture = Just . uniformTexture $ PixelRGBA8 0 0 0 255
+
+blueTexture :: Maybe (Texture PixelRGBA8)
 blueTexture = Just . uniformTexture $ PixelRGBA8 0 0 255 255
-redTexture =   Just . uniformTexture $ PixelRGBA8 255 0 0 255
+
+redTexture :: Maybe (Texture PixelRGBA8)
+redTexture = Just . uniformTexture $ PixelRGBA8 255 0 0 255
 
 drawTextArray :: [[(String, FontDescrb)]] -> IO ()
 drawTextArray texts = do
@@ -38,8 +43,11 @@ data FontDescrb = FontDescrb FontColor FontType
 data FontColor = FontRed | FontBlack | FontBlue
 data FontType  = FZHeiTi | MSYaHei
 
+slcColor :: FontColor -> Maybe (Texture PixelRGBA8)
 slcColor FontRed = redTexture
 slcColor FontBlue = blueTexture
 slcColor FontBlack = blackTexture
+
+slcFont :: FontType -> [Char]
 slcFont FZHeiTi = "fonts/fz_hei_ti.ttf"
 slcFont MSYaHei = "fonts/ms_ya_hei.ttf"

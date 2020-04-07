@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric#-}
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.NHentaiQuerier where
+module Module.NHentaiQuerier where
 
 import qualified Data.Text as Text
 import           Data.Aeson

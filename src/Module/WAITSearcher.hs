@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.WAITSearcher where
+module Module.WAITSearcher where
 
 import Network.Wreq
 import Data.Aeson

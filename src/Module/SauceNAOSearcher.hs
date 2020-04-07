@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Plugin.SauceNAOSearcher where
+module Module.SauceNAOSearcher where
 
 import           Network.Wreq as Wreq
 import           Control.Lens
@@ -13,7 +13,7 @@ import           Utils.Logging
 import           Utils.Misc as Misc
 import           Core.Data.Unity
 
-import           Plugin.NHentaiQuerier
+import           Module.NHentaiQuerier
 
 type Similarity = Text.Text
 type Url        = Text.Text
