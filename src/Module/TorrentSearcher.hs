@@ -9,16 +9,28 @@ import Control.Monad.IO.Class
 import Utils.Misc as Misc
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.UTF8 (toString)
+import qualified Data.Text as Text
 import Data.ByteString.Lazy.Search as BL
+import           Data.Text.Read              as Text
+import Data.Text.Lazy (toStrict)
+import           Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Concurrent
+import Data.Either
+import Core.Type.Unity.Update
+import Core.Type.Unity.Request
+import Core.Data.Unity
+import Data.Maybe
 
 import Module.Pic
 
-get10TrtLinks :: String -> IO (Maybe [String])
-get10TrtLinks keyword = do
+defaultQueryCnt :: Int
+defaultQueryCnt = 10
+
+getTrtLinks :: Int -> String -> IO (Maybe [String])
+getTrtLinks num keyword = do
   r <- get $ "https://www.torrentkitty.tv/search/" <> keyword
   let links = Misc.searchAllBetweenBL "/information/" "\"" $ BL.drop 18000 $ r ^. responseBody
-      linksTen = if length links > 10 then take 10 links else links
+      linksTen = if length links > num then take num links else links
   pure $ if null linksTen then Nothing else
     Just $ toString.("https://www.torrentkitty.tv/information/"<>) <$> linksTen
 
@@ -32,9 +44,22 @@ getTrtInfo url = do
                      (searchAllBetweenBL "d class=\"size\">" "<" rawHtml)
   pure $ TrtInfo <$> tName <*> tDate <*> pure tFiles
 
+getTrtMag :: String -> IO (Maybe Text.Text)
+getTrtMag url = do
+  r <- get url
+  pure $ ("magnet:?xt="<>).toStrict.decodeUtf8 <$> searchBetweenBL "magnet:?xt=" "<" (r ^. responseBody)
+
+getTrtMags :: Int -> String -> IO ([Maybe Text.Text])
+getTrtMags num keyword = do
+  trtLinks <- getTrtLinks num keyword
+  maybe' trtLinks (pure []) (\links -> do
+    ch <- newChan
+    _ <- liftIO $ traverse (\link -> forkIO (getTrtMag link >>= writeChan ch)) links
+    replicateM (length links) (readChan ch))
+
 generateTrtTexts :: String -> IO [[(String, FontDescrb)]]
 generateTrtTexts keyword = do
-  trtLinks <- get10TrtLinks keyword
+  trtLinks <- getTrtLinks defaultQueryCnt keyword
   maybe' trtLinks (pure []) (\links -> do
     ch <- newChan
     _ <- liftIO $ traverse (\link -> forkIO $ do
@@ -61,6 +86,26 @@ concatTrtInfo info = map (map (\(x, y) -> (toString x, y))) $
   , (trt_date info, redFont)]] <>
   (map (uncurry (\a b -> [("\t\t|- " <> a <> "\t\t", defaultFont), (b, redFont)])) $
     filter (\(x,_) -> (snd $ BL.breakAfter "BitComet" x) == "") $ trt_files info)
+
+processTrtQurey :: (Text.Text, Update) -> IO [SendMsg]
+processTrtQurey (cmdBody, update) = do
+  let mode = Text.splitOn " " cmdBody
+  case length mode of
+    0 -> pure []
+    1 -> do
+      texts <- generateTrtTexts $ Text.unpack cmdBody
+      drawTextArray ("images/"<>imgCachePath) texts
+      pure [makeReqFromUpdate'' update (Just imgCachePath) Nothing]
+    2 -> do
+      let i = fromRight 0 $ fst <$> decimal (mode !! 1)
+      if i > defaultQueryCnt
+         then pure [makeReqFromUpdate update $ "[错误] 索引超出界限。"]
+         else do
+           mags <- getTrtMags defaultQueryCnt (Text.unpack $ head mode)
+           let infos = fromMaybe "Null" <$> mags
+           pure [makeReqFromUpdate update $ "[磁链] " <> infos !! i]
+    _ -> pure [makeReqFromUpdate update $ "[错误] 参数错误。"]
+  where imgCachePath = "TrtCache.jpg"
 
 type FileName = BL.ByteString
 type FileSize = BL.ByteString

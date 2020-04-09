@@ -1,7 +1,7 @@
 name:                wl-bot
 version:             0.0.1.0
 github:              "nutr1t07/wl-bot"
-license:             WTFPL
+license:             LGPL-3.0
 author:              "Nutr1t07"
 maintainer:          "nutr1t07@outlook.com"
 copyright:           "2019-2020 Nutr1t07"
@@ -22,6 +22,8 @@ dependencies:
 - base >= 4.7 && < 5
 - aeson
 - text
+- process
+- vector
 - http-types
 - bytestring
 - wai-extra

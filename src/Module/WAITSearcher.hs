@@ -15,9 +15,9 @@ import Control.Exception
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Base64.Lazy as Base64
 
-runWAITSearch :: Text.Text -> IO (Either String WAITResults)
+runWAITSearch :: String -> IO (Either String WAITResults)
 runWAITSearch imgUrl = do
-  img <- get $ Text.unpack imgUrl
+  img <- get imgUrl
   let imgBase64 = Base64.encode $ img ^. responseBody
   r <- try $ post "https://trace.moe/api/search" ["image" := imgBase64]
                 :: IO (Either SomeException (Response BL.ByteString))
@@ -33,7 +33,7 @@ processWAITQuery (_, update) =
    maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls' -> do
        result <- runWAITSearch $ head imgUrls'
        logWT Info $
-         "WAIT [" <> Text.unpack (head imgUrls') <> "] sending from " <> show (user_id update)
+         "WAIT [" <> head imgUrls' <> "] sending from " <> show (user_id update)
        either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
          pure $ [(makeReqFromUpdate update) . Misc.unlines $
            let fstRst = head $ wt_docs rst

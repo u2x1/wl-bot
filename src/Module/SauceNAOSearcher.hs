@@ -17,13 +17,13 @@ import           Module.NHentaiQuerier
 
 type Similarity = Text.Text
 type Url        = Text.Text
-runSauceNAOSearch :: Text.Text -> Text.Text -> IO (Either String SnaoResults)
+runSauceNAOSearch :: String -> String -> IO (Either String SnaoResults)
 runSauceNAOSearch apiKey imgUrl = do
   let opts = defaults & param "db" .~ ["999"]
                       & param "output_type" .~ ["2"]
                       & param "numres" .~ ["1"]
-                      & param "api_key" .~ [apiKey]
-                      & param "url" .~ [imgUrl]
+                      & param "api_key" .~ [Text.pack apiKey]
+                      & param "url" .~ [Text.pack imgUrl]
   r <- try $ Wreq.getWith opts "https://saucenao.com/search.php"
                 :: IO (Either SomeException (Response BL.ByteString))
   case r of
@@ -40,7 +40,7 @@ processSnaoQuery (_, update) =
    maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls' -> do
        result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls'
        logWT Info $
-         "SauceNAO [" <> Text.unpack (head imgUrls') <> "] sending from " <> show (user_id update)
+         "SauceNAO [" <> head imgUrls' <> "] sending from " <> show (user_id update)
        either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
            let fstRst = head $ sr_results rst in
            case sr_ext_url fstRst of

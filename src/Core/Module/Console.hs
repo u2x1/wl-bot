@@ -20,21 +20,22 @@ import           Module.DiceHelper
 import           Module.SolidotFetcher
 import           Module.YandeFetcher
 import           Module.SauceNAOSearcher
+import           Module.TorrentSearcher
 import           Module.PixivQuerier
 import           Module.NHentaiQuerier
 import           Module.WAITSearcher
 import           Module.Ascii2dSearcher
 
 getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
-getHandler cmdHeader = fst <$> lookup (Text.toLower $ Text.drop 1 cmdHeader) commands
+getHandler cmdHeader = fst <$> lookup (Text.tail cmdHeader) commands
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
   case message_text update of
     Just msgTxt ->
-      if Text.head msgTxt == '/' || Text.head msgTxt == '.' || Text.head msgTxt == '。'
-         then
-           let command = Text.breakOn " " msgTxt in
+      if head msgTxt == '/' || head msgTxt == '.' || head msgTxt == '。'
+         then do
+           let command = Text.breakOn " " $ Text.pack msgTxt
            case getHandler (fst command) of
              Just handler -> handler (Text.strip $ snd command, update)
              _ -> pure []
@@ -98,5 +99,6 @@ commands =
   , ("fh"      , (processJavDBQuery     , ("搜番号"  , " NUMBER: 从JavDB查询番号")))
   , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))
   , ("pid"     , (processPixivQuery     , ("Pixiv ID", " PID: 使用PID从pixiv.cat取得图片")))
---  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
+  , ("trt"     , (processTrtQurey       , ("搜种子"  , " KEYWORD <INDEX>: 从torrentkitty.tv搜索种子")))
+  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
   , ("help"    , (getCommandHelps       , ("帮助"    , " COMMAND: 查看帮助")))]

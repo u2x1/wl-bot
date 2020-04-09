@@ -2,7 +2,6 @@
 module Core.Type.Mirai.Update where
 
 import Data.Aeson
-import Data.Text (Text)
 import GHC.Generics
 import Utils.Json
 
@@ -20,9 +19,9 @@ instance FromJSON Update where
     <*> (v .: "sender")
 
 data MRMsg = MRMsg {
-    mrm_type :: Text
-  , mrm_text :: Maybe Text
-  , mrm_url  :: Maybe Text
+    mrm_type :: String
+  , mrm_text :: Maybe String
+  , mrm_url  :: Maybe String
 } deriving (Show, Generic)
 instance FromJSON MRMsg where
   parseJSON = dropParseJSON 4

@@ -9,7 +9,7 @@ import           Core.Data.Mirai           as Q
 import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
-makeReqFromUpdate'' :: UN.Update -> Maybe Text.Text -> Maybe Text.Text -> UR.SendMsg
+makeReqFromUpdate'' :: UN.Update -> Maybe String -> Maybe Text.Text -> UR.SendMsg
 makeReqFromUpdate'' update =
   UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing
 

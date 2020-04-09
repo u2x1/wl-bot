@@ -11,27 +11,34 @@ import qualified Utils.Misc as Misc
 import           Network.Wreq
 import           Control.Lens
 import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
-import           Data.ByteString.Lazy         as BL
-import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter, replace)
+import qualified Data.ByteString.Lazy         as BL
+import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter)
 import qualified Data.Text                    as Text
 import qualified Data.Text.Lazy               as TextL
 import           Data.Text.Lazy.Encoding
+import           Data.List                             (intersperse)
 
 getFstUrl :: BL.ByteString -> Maybe String
 getFstUrl content = fixUrl $ UTF8.toString <$> Misc.searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 content)
   where fixUrl = fmap ("https://baike.baidu.com/item" ++)
 
-getWords :: ByteString -> [ByteString]
+getWords :: BL.ByteString -> [Text.Text]
 getWords "" = []
-getWords str = fst (breakOn "<" xs) : getWords xs
+getWords str = (Text.strip.TextL.toStrict.decodeUtf8 $ fst (breakOn "<" xs)) : getWords xs
   where xs = snd $ breakAfter ">" str
 
 -- Select fragments that are not equal to "&nbsp;" or started with "\n"
-concatWord :: [ByteString] -> ByteString
-concatWord oStr = BL.replace "&nbsp;" (""::ByteString) s
-  where s = mconcat $ Prelude.filter
-              (\str -> BL.take 2 str /= "\n[")
-              oStr
+concatWord :: [Text.Text] -> Text.Text
+concatWord oStr = (mconcat.intersperse "\n\n") s
+  where s = foldr addNextLine [] $
+              filter
+              (\str -> str /= "" && Text.head str /= '[') $
+              Text.replace "&nbsp;" "" <$> oStr
+        addNextLine a [] = [a]
+        addNextLine a (bss@(b:bs)) = let a' = Text.strip a in
+                                         if Text.last a' == ('。')
+                                            then a' : bss
+                                            else (a' <> b):bs
 
 runBaiduSearch :: Text.Text -> IO Text.Text
 runBaiduSearch query = do
@@ -43,7 +50,7 @@ runBaiduSearch query = do
       case  getFirstPara $ realRsp ^. responseBody of
         Nothing -> pure (Text.pack $
                      "词条无摘要，查看此处:\n" <> realUrl)
-        Just resultText -> pure $ (Text.strip.TextL.toStrict.decodeUtf8.concatWord.getWords) resultText
+        Just resultText -> pure $ concatWord.getWords $ resultText
   where
     getFirstPara = Misc.searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]

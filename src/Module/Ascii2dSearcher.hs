@@ -13,9 +13,9 @@ import           Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy          as TextL
 
 type Url = Text.Text
-getAscii2dUrl :: Url -> IO (Maybe (Url, Url))
+getAscii2dUrl :: String -> IO (Maybe (Url, Url))
 getAscii2dUrl imgUrl = do
-  r <- get $ "https://ascii2d.net/search/url/" <> Text.unpack imgUrl
+  r <- get $ "https://ascii2d.net/search/url/" <> imgUrl
   let rContent = r ^. responseBody
   let colorUrl = fixUrl.("/search/color"<>) <$> Misc.searchBetweenBL "/search/color" "\">" rContent
   let bovwUrl  = fixUrl.("/search/bovw"<>) <$> Misc.searchBetweenBL "/search/bovw" "\">" rContent
@@ -29,7 +29,7 @@ processAscii2dSearch (_, update) =
      Just imgUrls' -> do
        result <- getAscii2dUrl $ head imgUrls'
        logWT Info $
-         "Ascii2d Query: [" <> Text.unpack (head imgUrls') <> "] sending from " <> show (user_id update)
+         "Ascii2d Query: [" <> head imgUrls' <> "] sending from " <> show (user_id update)
        case result of
          Just rst ->
                pure [makeReqFromUpdate update $ Misc.unlines

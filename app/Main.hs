@@ -35,17 +35,18 @@ runServer oriConfig = do
   config <- liftIO $ do
     r <- Wreq.post ((oriConfig ^. mirai_server)<>"auth") $ pairs ("authKey" .= (oriConfig ^. mirai_auth_key))
     let sk = decodeSessionKey $ r ^. responseBody
-    logWT Info $ show $ sk
+    logWT Info $ "SessionKey: [" <> show sk <>"]"
+
     _ <- Wreq.post ((oriConfig ^. mirai_server)<>"verify") $
       pairs ("sessionKey" .= (sk) <> "qq" .= (oriConfig ^. mirai_qq_id))
     maybe' sk (logErr "Setting Mirai session" "Failed" >> return oriConfig) $ \s ->
       return $ set mirai_session_key s oriConfig
 
   _ <- checkModuleRequirements
-  _ <- liftIO $ forkIO (checkModuleEventsIn1Day config)
+  _ <- forkIO (checkModuleEventsIn1Day config)
 
 
-  _ <- WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config)
+  _ <- forkIO $ WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config)
   scotty (config ^. port) $ handleTGMsg config
 
 handleTGMsg :: Config -> ScottyM ()

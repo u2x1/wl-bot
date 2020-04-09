@@ -23,5 +23,5 @@ processPixivQuery (cmdBody, update) =
        r <- get $ packPixivImgUrl cmdBody
        let imgCachePath = "pixivCache.jpg"
        BL.writeFile ("images/"<>imgCachePath) $ r ^. responseBody
-       pure [makeReqFromUpdate'' update (Just $ Text.pack imgCachePath) Nothing]
+       pure [makeReqFromUpdate'' update (Just imgCachePath) Nothing]
      else pure [makeReqFromUpdate update "无效PID。"]

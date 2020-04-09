@@ -18,7 +18,7 @@ data Message = Message {
     message_id :: Integer
   , from :: User
   , chat :: Chat
-  , text :: Maybe Text
+  , text :: Maybe String
 } deriving (Eq, Show, Generic)
 instance FromJSON Message
 
