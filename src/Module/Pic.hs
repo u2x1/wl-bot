@@ -18,8 +18,8 @@ blueTexture = Just . uniformTexture $ PixelRGBA8 0 0 255 255
 redTexture :: Maybe (Texture PixelRGBA8)
 redTexture = Just . uniformTexture $ PixelRGBA8 255 0 0 255
 
-drawTextArray :: String -> [[(String, FontDescrb)]] -> IO ()
-drawTextArray path texts = do
+drawTextArray :: String -> Int -> [[(String, FontDescrb)]] -> IO ()
+drawTextArray path quality texts = do
   font_FZHeiTi <- loadFontFile $ slcFont FZHeiTi
   font_MSYaHei <- loadFontFile $ slcFont MSYaHei
   case font_FZHeiTi of
@@ -36,10 +36,10 @@ drawTextArray path texts = do
                     (PointSize 16) text (slcColor color)) x) : (makeTextList (cnt+1) xs)
               makeTextList _ [] = []
           let png = decodePng.BL.toStrict . encodePng $
-                     renderDrawing 2000 (11 + 22 * length texts) (PixelRGBA8 255 255 255 255) .
+                     renderDrawing 1800 (11 + 22 * length texts) (PixelRGBA8 255 255 255 255) .
                        withTexture (uniformTexture $ PixelRGBA8 0 0 0 255) $ do
                          foldr (>>) (pure ()) (makeTextList 1 texts)
-          traverse_ ((BL.writeFile path) .imageToJpg 100) png
+          traverse_ ((BL.writeFile path) .imageToJpg quality) png
 
 
 data FontDescrb = FontDescrb FontColor FontType

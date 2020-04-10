@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.PixivQuerier where
 
+import           System.Directory
 import           Core.Type.Unity.Update       as UU
 import           Core.Data.Unity
 import           Core.Type.Unity.Request      as UR
@@ -21,7 +22,10 @@ processPixivQuery (cmdBody, update) =
        logWT Info $
          "PID: [" <> Text.unpack cmdBody <> "] sending from " <> show (user_id update)
        r <- get $ packPixivImgUrl cmdBody
-       let imgCachePath = "pixivCache.jpg"
-       BL.writeFile ("images/"<>imgCachePath) $ r ^. responseBody
-       pure [makeReqFromUpdate'' update (Just imgCachePath) Nothing]
+       let imgCachePath = "images/Pixiv-" <> Text.unpack cmdBody <> ".jpg"
+       exist <- doesFileExist imgCachePath
+       if not exist
+          then BL.writeFile (imgCachePath) $ r ^. responseBody
+          else pure ()
+       pure [makeReqFromUpdate'' update (Just $ drop 7 imgCachePath) Nothing]
      else pure [makeReqFromUpdate update "无效PID。"]

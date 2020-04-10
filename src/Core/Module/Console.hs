@@ -100,5 +100,5 @@ commands =
   , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))
   , ("pid"     , (processPixivQuery     , ("Pixiv ID", " PID: 使用PID从pixiv.cat取得图片")))
   , ("trt"     , (processTrtQurey       , ("搜种子"  , " KEYWORD <INDEX>: 从torrentkitty.tv搜索种子")))
-  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
+--  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
   , ("help"    , (getCommandHelps       , ("帮助"    , " COMMAND: 查看帮助")))]

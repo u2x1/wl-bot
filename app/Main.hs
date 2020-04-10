@@ -71,7 +71,7 @@ app config conn = do
           Just originUpdate ->
             case makeUpdateFromMR originUpdate of
               Just update -> do
-                _ <- logWT Info $ show update
+--                _ <- logWT Info $ show update
                 _ <- liftIO $ forkIO (commandProcess update config)
                 liftIO $ pure ()
 
