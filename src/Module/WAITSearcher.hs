@@ -3,7 +3,9 @@ module Module.WAITSearcher where
 
 import Network.Wreq
 import Data.Aeson
+import Data.Aeson.Types
 import Control.Lens
+import Control.Monad
 import Utils.Logging
 
 import qualified Data.Text as Text
@@ -60,7 +62,7 @@ data WAITResult = WAITResult {
     wt_similarity :: Float
   , wt_anime :: Text.Text
   , wt_season :: Text.Text
-  , wt_episode :: Int
+  , wt_episode :: Text.Text
   , wt_at :: Float
 } deriving (Show)
 instance FromJSON WAITResult where
@@ -68,5 +70,10 @@ instance FromJSON WAITResult where
     <$> ((*100) <$> v .: "similarity")
     <*> (v .: "anime")
     <*> (v .: "season")
-    <*> (v .: "episode")
+    <*> ((v .: "episode") >>= (parseEpisode))
     <*> (v .: "at")
+
+parseEpisode :: Value -> Parser Text.Text
+parseEpisode (Number o) = pure $ (fst . Text.breakOn ".") $ Text.pack $ show o
+parseEpisode (String o) = pure o
+parseEpisode _ = mzero

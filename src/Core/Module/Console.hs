@@ -11,6 +11,7 @@ import           Core.Data.Unity
 import           Control.Concurrent
 import           Control.Monad
 import           Utils.Config
+--import Utils.Logging
 import qualified Utils.Misc as Misc
 import           Module.BaikeQuerier
 import           Module.NoteSaver
@@ -18,7 +19,7 @@ import           Module.JavDBSearcher
 import           Module.DiceHelper
 --import           Module.BilibiliHelper
 import           Module.SolidotFetcher
-import           Module.YandeFetcher
+--import           Module.YandeFetcher
 import           Module.SauceNAOSearcher
 import           Module.TorrentSearcher
 import           Module.PixivQuerier
@@ -50,7 +51,7 @@ commandProcess update config = do
 checkModuleRequirements :: IO ()
 checkModuleRequirements = do
   let rqmt = mconcat [ sfRqmt
-                     , ydRqmt
+ --                    , ydRqmt
                      , noteRqmt]
   de <- doesDirectoryExist "wldata"
   _ <- if de then pure () else createDirectory "wldata"
@@ -64,14 +65,12 @@ oneMin = 60000000
 
 checkModuleEventsIn1Day :: Config -> IO ()
 checkModuleEventsIn1Day config = forever $ do
-  msgs <- sequence [checkNewOfSolidot, sendYandePopImgs]
+  msgs <- sequence [checkNewOfSolidot]
   traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay (oneMin*60*24)
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
-sendMsgWithDelay delay config =
-  traverse_ (\msg -> sendTextMsg msg config >> threadDelay delay)
-
+sendMsgWithDelay delay config = traverse_ (\x -> sendTextMsg x config >> threadDelay delay)
 
 -- Module: Help --
 
