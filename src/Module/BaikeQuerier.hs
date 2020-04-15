@@ -49,7 +49,7 @@ runBaiduSearch query = do
       realRsp <- get realUrl
       case  getFirstPara $ realRsp ^. responseBody of
         Nothing -> pure (Text.pack $
-                     "词条无摘要，查看此处:\n" <> realUrl)
+                     "词条无摘要:\n" <> realUrl)
         Just resultText -> pure $ concatWord.getWords $ resultText
   where
     getFirstPara = Misc.searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
@@ -57,7 +57,6 @@ runBaiduSearch query = do
                     & param "wd" .~ [query <> " site:baike.baidu.com"]
                     & param "ie" .~ ["utf-8"] & param "pn" .~ ["0"]
                     & param "cl" .~ ["3"] & param "rn" .~ ["100"]
-
 
 processBaiduQuery :: (Text.Text, Update) -> IO [SendMsg]
 processBaiduQuery (cmdBody, update) =
