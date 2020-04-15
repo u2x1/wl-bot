@@ -43,6 +43,7 @@ dependencies:
 - FontyFruity
 - base64-bytestring
 - containers
+- html-entities
 
 library:
   source-dirs: src

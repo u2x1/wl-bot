@@ -9,14 +9,14 @@ import           Core.Data.Mirai           as Q
 import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
-makeReqFromUpdate'' :: UN.Update -> Maybe String -> Maybe Text.Text -> UR.SendMsg
-makeReqFromUpdate'' update =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing
+makeReqFromUpdate'' :: UN.Update -> String -> Text.Text -> UR.SendMsg
+makeReqFromUpdate'' update imgpath txt =
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing (Just imgpath) (Just txt)
 
 -- | Make SendMsg from Update with image urls and text.
-makeReqFromUpdate' :: UN.Update -> Maybe [Text.Text] -> Maybe Text.Text -> UR.SendMsg
+makeReqFromUpdate' :: UN.Update -> [Text.Text] -> Text.Text -> UR.SendMsg
 makeReqFromUpdate' update imgurls txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)imgurls Nothing txt
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)(Just imgurls) Nothing (Just txt)
 
 makeReqFromUpdate :: UN.Update -> Text.Text -> UR.SendMsg
 makeReqFromUpdate update txt =

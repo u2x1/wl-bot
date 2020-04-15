@@ -6,7 +6,7 @@ import           Core.Type.Unity.Request      as UR
 import           Core.Data.Unity
 
 import           Utils.Logging
-import qualified Utils.Misc as Misc
+import           Utils.Misc                   as Misc
 
 import           Network.Wreq
 import           Control.Lens
@@ -14,58 +14,56 @@ import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
 import qualified Data.ByteString.Lazy         as BL
 import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter)
 import qualified Data.Text                    as Text
-import qualified Data.Text.Lazy               as TextL
+import           Data.Text                             (strip, Text, unpack)
+import           Data.Text.Lazy                        (toStrict)
+import           Data.Text.Lazy.Builder                (toLazyText)
 import           Data.Text.Lazy.Encoding
 import           Data.List                             (intersperse)
+import           Core.Type.EitherT
+import           HTMLEntities.Decoder
 
-getFstUrl :: BL.ByteString -> Maybe String
-getFstUrl content = fixUrl $ UTF8.toString <$> Misc.searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 content)
-  where fixUrl = fmap ("https://baike.baidu.com/item" ++)
-
-getWords :: BL.ByteString -> [Text.Text]
+getWords :: BL.ByteString -> [Text]
 getWords "" = []
-getWords str = (Text.strip.TextL.toStrict.decodeUtf8 $ fst (breakOn "<" xs)) : getWords xs
+getWords str = (strip.toStrict.decodeUtf8 $ fst (breakOn "<" xs)) : getWords xs
   where xs = snd $ breakAfter ">" str
 
 -- Select fragments that are not equal to "&nbsp;" or started with "\n"
-concatWord :: [Text.Text] -> Text.Text
-concatWord oStr = (mconcat.intersperse "\n\n") s
+concatWord :: [Text] -> Text
+concatWord oStr = toStrict.toLazyText.htmlEncodedText $ (mconcat.intersperse "\n\n") $ s
   where s = foldr addNextLine [] $
               filter
               (\str -> str /= "" && Text.head str /= '[') $
-              Text.replace "&nbsp;" "" <$> oStr
-        addNextLine a [] = [a]
-        addNextLine a (bss@(b:bs)) = let a' = Text.strip a in
-                                         if Text.last a' == ('。')
-                                            then a' : bss
-                                            else (a' <> b):bs
+              oStr
+        addNextLine x [] = [x]
+        addNextLine x xs = let a = strip x in
+                            if Text.last a == ('。')
+                               then a : xs
+                               else (a <> (head xs)) : (tail xs)
 
-runBaiduSearch :: Text.Text -> IO Text.Text
+runBaiduSearch :: Text -> IO Text
 runBaiduSearch query = do
-  result <- getWith opts $ "https://www.baidu.com/s"
-  case getFstUrl (result ^. responseBody) of
-    Nothing      -> pure "无结果。"
-    Just realUrl -> do
-      realRsp <- get realUrl
-      case  getFirstPara $ realRsp ^. responseBody of
-        Nothing -> pure (Text.pack $
-                     "词条无摘要:\n" <> realUrl)
-        Just resultText -> pure $ concatWord.getWords $ resultText
+  x <- runMEitherT $ do
+    realUrl <- liftMaybe "未找到词条。" (getFstUrl <$> (getWith opts $ "https://www.baidu.com/s"))
+    realRst <- liftMaybe ("词条无摘要:\n" <> Text.pack realUrl) (getFirstPara <$> get realUrl)
+    pure $ concatWord.getWords $ realRst
+  pure $ getTextT x
   where
-    getFirstPara = Misc.searchBetweenBL "<div class=\"lemma-summary\" label-module=\"lemmaSummary\"" "lemmaWgt"
+    getFirstPara x = searchBetweenBL
+                       "<div class=\"lemma-summary\" label-module=\"lemmaSummary\""
+                       "lemmaWgt"
+                       (x ^. responseBody)
+    getFstUrl content = ("https://baike.baidu.com/item" <>).UTF8.toString <$> searchBetweenBL "baike.baidu.com/item" "\"" (BL.drop 180000 (content ^. responseBody))
     opts = defaults & header "User-Agent" .~ ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/73.0"]
                     & param "wd" .~ [query <> " site:baike.baidu.com"]
                     & param "ie" .~ ["utf-8"] & param "pn" .~ ["0"]
                     & param "cl" .~ ["3"] & param "rn" .~ ["100"]
 
-processBaiduQuery :: (Text.Text, Update) -> IO [SendMsg]
+processBaiduQuery :: (Text, Update) -> IO [SendMsg]
 processBaiduQuery (cmdBody, update) =
-  if content /= ""
+  if cmdBody /= ""
      then do
-       result <- runBaiduSearch content
+       result <- runBaiduSearch cmdBody
        logWT Info $
-         "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
+         "Query: [" <> unpack cmdBody <> "] sending from " <> show (user_id update)
        pure [makeReqFromUpdate update result]
      else pure []
-    where
-      content = Text.strip cmdBody

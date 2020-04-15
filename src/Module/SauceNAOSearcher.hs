@@ -3,72 +3,54 @@ module Module.SauceNAOSearcher where
 
 import           Network.Wreq as Wreq
 import           Control.Lens
-import qualified Data.Text as Text
+import           Data.Text    as Text (Text, pack, breakOn)
 import           Data.Aeson
-import qualified Data.ByteString.Lazy as BL
 import           Control.Exception
 import           Core.Type.Unity.Update  as UU
 import           Core.Type.Unity.Request as UR
-import           Utils.Logging
 import           Utils.Misc as Misc
 import           Core.Data.Unity
+import           Core.Type.EitherT
 import Data.Maybe
 
 import           Module.NHentaiQuerier
 
-type Similarity = Text.Text
-type Url        = Text.Text
-runSauceNAOSearch :: String -> String -> IO (Either String SnaoResults)
-runSauceNAOSearch apiKey imgUrl = do
-  let opts = defaults & param "db" .~ ["999"]
-                      & param "output_type" .~ ["2"]
-                      & param "numres" .~ ["3"]
-                      & param "api_key" .~ [Text.pack apiKey]
-                      & param "url" .~ [Text.pack imgUrl]
-  r <- try $ Wreq.getWith opts "https://saucenao.com/search.php"
-                :: IO (Either SomeException (Response BL.ByteString))
-  case r of
-    Right realR -> case eitherDecode $ realR ^. responseBody of
-                     Right x -> (pure.Right) x
-                     Left str -> (pure.Left) $ "未找到近似图片。"<> str
-    Left excp -> (pure.Left) $
+runSauceNAOSearch :: String -> String -> IO (Either Text.Text SnaoResults)
+runSauceNAOSearch apiKey imgUrl = runMEitherT $ do
+  r <- liftEither getErrHint $ try $ Wreq.getWith opts "https://saucenao.com/search.php"
+  liftEither (pack.("解析JSON错误: "<>)) (pure $ eitherDecode $ r ^. responseBody)
+  where opts = defaults & param "db" .~ ["999"]
+                        & param "output_type" .~ ["2"]
+                        & param "numres" .~ ["3"]
+                        & param "api_key" .~ [Text.pack apiKey]
+                        & param "url" .~ [Text.pack imgUrl]
+
+getErrHint :: SomeException -> Text
+getErrHint excp =
       if snd (Text.breakOn "rate limit" (Text.pack $ show excp)) == ""
-         then  "请求错误: " <> show excp
-         else  "已超出30秒内搜图限制。"
+         then "请求错误: " <> (Text.pack $ show excp)
+         else "已超出30秒内搜图限制。"
+
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
-processSnaoQuery (_, update) =
-   maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls' -> do
-       result <- runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" $ head imgUrls'
-       logWT Info $
-         "SauceNAO [" <> head imgUrls' <> "] sending from " <> show (user_id update)
-       either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst -> do
-         sendMsgs <- traverse (getText update) (sr_results rst)
-         pure $ catMaybes sendMsgs))
-         
-           -- let fstRst = head $ sr_results rst in
-           -- case sr_ext_url fstRst of
-           --   Just extUrls -> pure [makeReqFromUpdate' update (Just [sr_thumbnail fstRst]) $ Just $ Misc.unlines
-           --                                              [ "[相似度] " <> sr_similarity fstRst
-           --                                              , "[图源] " <> head extUrls]]
-           --   _ -> (:[]) <$> (makeReqFromUpdate update) . Misc.unlines <$>  maybe' (sr_doujinshi_name fstRst) (pure []) (\dn -> do
-           --         n <- getNHentaiBookId dn
-           --         pure $ ["[本子名] " <> dn] <>
-           --           maybe' n [] (\info ->
-           --                ["[链接]" <> "https://nhentai.net/g/" <> snd info]))))
+processSnaoQuery (_, update) = do
+  fmap (getTextT' update) $
+    runMEitherT $ do
+      imgUrl <- liftMaybe "无效图片。" $ pure $ head <$> message_image_urls update
+      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" imgUrl
+      sendMsgs <- lift $ traverse (getText update) (sr_results result)
+      pure $ catMaybes sendMsgs
 
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst =
   case sr_ext_url rst of
-    Just extUrls -> pure $ Just $ makeReqFromUpdate' update (Just [sr_thumbnail rst]) $ Just $ Misc.unlines
+    Just extUrls -> pure $ Just $ makeReqFromUpdate' update ([sr_thumbnail rst]) $ Misc.unlines
                                                [ "[相似度] " <> sr_similarity rst
                                                , "[图源] " <> head extUrls]
     _ ->  maybe' (sr_doujinshi_name rst) (pure Nothing) (\dn -> do
           n <- getNHentaiBookId dn
           pure $ Just $ (makeReqFromUpdate update) $ Misc.unlines $ ["[本子名] " <> dn] <>
             [maybe' n "" (("[链接] https://nhentai.net/g/" <>).snd)])
-
-
 
 data SnaoResults = SnaoResults {
     sh_short_remaining :: Int

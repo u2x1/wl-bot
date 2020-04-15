@@ -90,7 +90,7 @@ processTrtQurey (cmdBody, update) = do
            drawTextArray imgCachePath 50 texts
            BL.writeFile ("wldata/TR-" <> Text.unpack cmdBody <> ".txt") $ encode $ fmap trt_mag infos
          else pure ()
-      pure [makeReqFromUpdate'' update (Just $ drop 7 imgCachePath) Nothing]
+      pure [makeReqFromUpdate'' update (drop 7 imgCachePath) ""]
     2 -> do
       let i = fromRight 0 $ fst <$> decimal (mode !! 1)
       if i > defaultQueryCnt
