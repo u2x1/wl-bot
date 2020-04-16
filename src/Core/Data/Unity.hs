@@ -38,10 +38,10 @@ makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> chatId <*
 makeUpdateFromMR :: Q.Update -> Maybe UN.Update
 makeUpdateFromMR cqUpdate = UN.Update <$> Just QQ <*> userId <*> chatId <*> pure msgTxt <*> pure msgImage <*> msgType <*> msgId
   where userId   = Just $ Q.mrs_id .  Q.mirai_sender   $ cqUpdate
-        msgId    = Just $ Q.mirai_message_id           $ cqUpdate
-        msgTxt   = Q.getText.Q.mirai_message_chain $ cqUpdate
-        msgImage = Q.getImgUrls.Q.mirai_message_chain$ cqUpdate
-        chatId   = case Q.mrs_group_id . Q.mirai_sender$cqUpdate of
+        msgId    = Just $ Q.mirai_message_id             cqUpdate
+        msgTxt   = Q.getText.Q.mirai_message_chain $     cqUpdate
+        msgImage = Q.getImgUrls.Q.mirai_message_chain$   cqUpdate
+        chatId   = case Q.mrs_group_id . Q.mirai_sender$ cqUpdate of
                      Nothing -> userId
                      grpid   -> grpid
         msgType  = case Q.mirai_type cqUpdate of

@@ -29,21 +29,21 @@ getWords str = (strip.toStrict.decodeUtf8 $ fst (breakOn "<" xs)) : getWords xs
 
 -- Select fragments that are not equal to "&nbsp;" or started with "\n"
 concatWord :: [Text] -> Text
-concatWord oStr = toStrict.toLazyText.htmlEncodedText $ (mconcat.intersperse "\n\n") $ s
+concatWord oStr = toStrict.toLazyText.htmlEncodedText $ (mconcat.intersperse "\n\n") s
   where s = foldr addNextLine [] $
               filter
-              (\str -> str /= "" && Text.head str /= '[') $
+              (\str -> str /= "" && Text.head str /= '[')
               oStr
         addNextLine x [] = [x]
         addNextLine x xs = let a = strip x in
-                            if Text.last a == ('。')
+                            if Text.last a == '。'
                                then a : xs
-                               else (a <> (head xs)) : (tail xs)
+                               else (a <> head xs) : tail xs
 
 runBaiduSearch :: Text -> IO Text
 runBaiduSearch query = do
   x <- runMEitherT $ do
-    realUrl <- liftMaybe "未找到词条。" (getFstUrl <$> (getWith opts $ "https://www.baidu.com/s"))
+    realUrl <- liftMaybe "未找到词条。" (getFstUrl <$> getWith opts "https://www.baidu.com/s")
     realRst <- liftMaybe ("词条无摘要:\n" <> Text.pack realUrl) (getFirstPara <$> get realUrl)
     pure $ concatWord.getWords $ realRst
   pure $ getTextT x

@@ -38,7 +38,7 @@ runServer oriConfig = do
     logWT Info $ "SessionKey: [" <> show sk <>"]"
 
     _ <- Wreq.post ((oriConfig ^. mirai_server)<>"verify") $
-      pairs ("sessionKey" .= (sk) <> "qq" .= (oriConfig ^. mirai_qq_id))
+      pairs ("sessionKey" .= sk <> "qq" .= (oriConfig ^. mirai_qq_id))
     maybe' sk (logErr "Setting Mirai session" "Failed" >> return oriConfig) $ \s ->
       return $ set mirai_session_key s oriConfig
 
@@ -81,5 +81,5 @@ app config conn = do
 decodeSessionKey :: BL.ByteString -> Maybe String
 decodeSessionKey rawHtml = do
   result <- decode rawHtml
-  flip parseMaybe result $ \v -> do
-    (v .: "session") >>= return
+  flip parseMaybe result $ \v ->
+    v .: "session"

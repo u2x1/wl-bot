@@ -37,7 +37,7 @@ processWAITQuery (_, update) =
        logWT Info $
          "WAIT [" <> head imgUrls' <> "] sending from " <> show (user_id update)
        either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
-         pure $ [(makeReqFromUpdate update) . Misc.unlines $
+         pure [makeReqFromUpdate update . Misc.unlines $
            let fstRst = head $ wt_docs rst
                similarity = show $ wt_similarity fstRst
                anime = wt_anime fstRst
@@ -49,9 +49,9 @@ processWAITQuery (_, update) =
            , "[季度] " <> season
            , "[位置] #" <> Text.pack episode <> " " <> toTime atTime]]))
         where
-          toTime x = Text.pack $ (show (div (round x) 60 :: Int)) <> ":" <> (show (mod (round x) 60 :: Int))
+          toTime x = Text.pack $ show (div (round x) 60 :: Int) <> ":" <> show (mod (round x) 60 :: Int)
 
-data WAITResults = WAITResults {
+newtype WAITResults = WAITResults {
     wt_docs :: [WAITResult]
 } deriving (Show)
 instance FromJSON WAITResults where
@@ -70,7 +70,7 @@ instance FromJSON WAITResult where
     <$> ((*100) <$> v .: "similarity")
     <*> (v .: "anime")
     <*> (v .: "season")
-    <*> ((v .: "episode") >>= (parseEpisode))
+    <*> ((v .: "episode") >>= parseEpisode)
     <*> (v .: "at")
 
 parseEpisode :: Value -> Parser Text.Text

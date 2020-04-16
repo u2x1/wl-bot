@@ -28,12 +28,12 @@ runSauceNAOSearch apiKey imgUrl = runMEitherT $ do
 getErrHint :: SomeException -> Text
 getErrHint excp =
       if snd (Text.breakOn "rate limit" (Text.pack $ show excp)) == ""
-         then "请求错误: " <> (Text.pack $ show excp)
+         then "请求错误: " <> Text.pack (show excp)
          else "已超出30秒内搜图限制。"
 
 
 processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
-processSnaoQuery (_, update) = do
+processSnaoQuery (_, update) =
   fmap (getTextT' update) $
     runMEitherT $ do
       imgUrl <- liftMaybe "无效图片。" $ pure $ head <$> message_image_urls update
@@ -44,12 +44,12 @@ processSnaoQuery (_, update) = do
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst =
   case sr_ext_url rst of
-    Just extUrls -> pure $ Just $ makeReqFromUpdate' update ([sr_thumbnail rst]) $ Misc.unlines
+    Just extUrls -> pure $ Just $ makeReqFromUpdate' update [sr_thumbnail rst] $ Misc.unlines
                                                [ "[相似度] " <> sr_similarity rst
                                                , "[图源] " <> head extUrls]
     _ ->  maybe' (sr_doujinshi_name rst) (pure Nothing) (\dn -> do
           n <- getNHentaiBookId dn
-          pure $ Just $ (makeReqFromUpdate update) $ Misc.unlines $ ["[本子名] " <> dn] <>
+          pure $ Just $ makeReqFromUpdate update $ Misc.unlines $ ["[本子名] " <> dn] <>
             [maybe' n "" (("[链接] https://nhentai.net/g/" <>).snd)])
 
 data SnaoResults = SnaoResults {

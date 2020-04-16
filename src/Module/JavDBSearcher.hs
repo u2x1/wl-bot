@@ -18,12 +18,12 @@ getFstUrl content = fixUrl $ UTF8.toString <$> Misc.searchBetweenBL "href=\"/v/"
   where fixUrl = fmap ("https://javdb4.com/v/" <>)
 
 getMagnet :: BL.ByteString -> Maybe Text.Text
-getMagnet content = fixUrl $ (decodeUtf8 . BL.toStrict) <$> Misc.searchBetweenBL "magnet:?xt=" "\"" (BL.drop 500 content)
+getMagnet content = fixUrl $ decodeUtf8 . BL.toStrict <$> Misc.searchBetweenBL "magnet:?xt=" "\"" (BL.drop 500 content)
   where fixUrl = fmap ("magnet:?xt=" <>)
 
 runJavDBSearch :: Text.Text -> IO (Maybe Text.Text)
 runJavDBSearch query = do
-  result <- getWith opts $ "https://javdb4.com/search"
+  result <- getWith opts "https://javdb4.com/search"
   case getFstUrl (result ^. responseBody) of
     Nothing      -> pure Nothing
     Just realUrl -> do

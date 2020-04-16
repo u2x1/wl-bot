@@ -63,7 +63,7 @@ parseSubscriber = do
   fileContent <- Text.readFile (sfRqmt !! 1)
   let subscribers = Text.splitOn " " <$> Text.splitOn "\n" fileContent
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
-  pure $ (traverse (uncurry3 SendMsg) infos) . Just
+  pure $ traverse (uncurry3 SendMsg) infos . Just
   where
     uncurry3 f (a, b, c) = f a b c Nothing Nothing Nothing
     getSubscriberInfos [userId, plat, targetType] = Just

@@ -23,13 +23,13 @@ processPixivQuery (cmdBody, update) = do
          let imgCachePath = "images/Pixiv-" <> Text.unpack cmdBody <> ".jpg"
          exist <- lift (doesFileExist imgCachePath)
          if not exist
-            then lift $ BL.writeFile (imgCachePath) $ rsp ^. responseBody
+            then lift $ BL.writeFile imgCachePath $ rsp ^. responseBody
             else lift $ pure ()
          pure $ Text.pack imgCachePath
   pure [makeReqFromUpdate update $ getTextT x]
 
 getErrHint :: SomeException -> Text.Text
 getErrHint err
-  | (snd $ Text.breakOn "無法取得" $ Text.pack $ show err) /= "" = "该PID不存在。"
-  | (snd $ Text.breakOn "需要指定" $ Text.pack $ show err) /= "" = "该PID中含多张作品，请指定序号。"
+  | snd (Text.breakOn "無法取得" $ Text.pack $ show err) /= "" = "该PID不存在。"
+  | snd (Text.breakOn "需要指定" $ Text.pack $ show err) /= "" = "该PID中含多张作品，请指定序号。"
   | otherwise = "未知错误。"

@@ -10,7 +10,7 @@ import           Control.Lens
 import           Data.Text               as Text (Text)
 import           Data.Text.Lazy.Encoding
 import           Data.Text.Lazy          (toStrict)
-import Core.Type.EitherT
+import           Core.Type.EitherT
 
 getAscii2dUrl :: String -> IO (Maybe (Text, Text))
 getAscii2dUrl imgUrl = do

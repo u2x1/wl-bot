@@ -18,7 +18,9 @@ import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
 import           Core.Data.Unity
 import           Data.Maybe
+import           Data.Foldable
 import           Data.Aeson
+import           Data.Bifunctor
 import           Data.Vector                          ((!))
 import           System.Directory
 
@@ -37,24 +39,24 @@ getTrtLinks num keyword = do
 getTrtInfos :: [String] -> IO [TrtInfo]
 getTrtInfos links = do
   ch <- newChan
-  _ <- traverse (\url -> forkIO $ do
+  traverse_ (\url -> forkIO $ do
     r <- get url
     let rawHtml = r ^. responseBody
         tName   = searchBetweenBL "title>" " - Torrent Kitty" rawHtml
         tDate   = searchBetweenBL "Created On:</th><td>" "<" rawHtml
         tFiles  = zip (searchAllBetweenBL "\"name\">" "<" rawHtml)
                       (searchAllBetweenBL "d class=\"size\">" "<" rawHtml)
-        tMag    = (toStrict.decodeUtf8.("magnet:?xt="<>)) <$>
+        tMag    = toStrict.decodeUtf8.("magnet:?xt="<>) <$>
                      searchBetweenBL "magnet:?xt=" "<" (r ^. responseBody)
     writeChan ch $ TrtInfo <$> tName <*> tDate <*> pure tFiles <*> tMag) links
   catMaybes <$> replicateM (length links) (readChan ch)
 
 generateTrtTexts :: [TrtInfo] -> IO [[(String, FontDescrb)]]
-generateTrtTexts trtInfos = do
+generateTrtTexts trtInfos =
   pure $ mconcat.addNumber $ fmap concatTrtInfo trtInfos
   where addNumber = go 0
         go :: Int -> [[[(String,FontDescrb)]]] -> [[[(String, FontDescrb)]]]
-        go cnt (x:xs) = (modifyHead x (("["<>show cnt<>"] ") <>)) : go (cnt + 1) xs
+        go cnt (x:xs) = modifyHead x (("["<>show cnt<>"] ") <>) : go (cnt + 1) xs
         go _ [] = []
         modifyHead (((x,y):ys):xs) f = ((f x, y):ys) : xs
         modifyHead [] _ = []
@@ -64,15 +66,14 @@ tab :: BL.ByteString
 tab = "    "
 
 concatTrtInfo :: TrtInfo -> [[(String, FontDescrb)]]
-concatTrtInfo info = map (map (\(x, y) -> ((toString.hLongText) x, y))) $
-  [[((trt_name info <> "\t\t"), defaultFont)
-  , (trt_date info, redFont)]] <>
-  (map (uncurry (\a b -> [(tab <> "|- " <> a <> " ", defaultFont), (b, redFont)])) $
-    filter (\(y,x) -> (snd $ BL.breakAfter "BitComet" y) == "" && ((snd $ BL.breakAfter "G" x) /= "" || (snd $ BL.breakAfter "M" x) /= "")) $
+concatTrtInfo info = map (map (first (toString.hLongText))) $
+  [[(trt_name info <> "\t\t", defaultFont), (trt_date info, redFont)]] <>
+  map (\(a,b) -> [(tab <> "|- " <> a <> " ", defaultFont), (b, redFont)]) (
+    filter (\(y,x) -> snd (BL.breakAfter "BitComet" y) == "" && (snd (BL.breakAfter "G" x) /= "" || snd (BL.breakAfter "M" x) /= "")) $
       trt_files info)
         where hLongText x = let len = BL.length x in
                                      if len > 170
-                                        then (BL.take 160 x) <> " ... " <> (BL.drop (len-5) x)
+                                        then BL.take 160 x <> " ... " <> BL.drop (len-5) x
                                         else x
 
 processTrtQurey :: (Text.Text, Update) -> IO [SendMsg]
@@ -81,11 +82,11 @@ processTrtQurey (cmdBody, update) = do
   case length mode of
     0 -> pure []
     1 -> do
-      let imgCachePath = "images/TR-" <> (Text.unpack cmdBody) <> ".jpg"
-      exist <- doesFileExist $ imgCachePath
+      let imgCachePath = "images/TR-" <> Text.unpack cmdBody <> ".jpg"
+      exist <- doesFileExist imgCachePath
       if not exist
          then do
-           infos <- getTrtInfos =<< (getTrtLinks defaultQueryCnt $ Text.unpack cmdBody)
+           infos <- getTrtInfos =<< getTrtLinks defaultQueryCnt (Text.unpack cmdBody)
            texts <- generateTrtTexts infos
            drawTextArray imgCachePath 50 texts
            BL.writeFile ("wldata/TR-" <> Text.unpack cmdBody <> ".txt") $ encode $ fmap trt_mag infos
@@ -94,18 +95,18 @@ processTrtQurey (cmdBody, update) = do
     2 -> do
       let i = fromRight 0 $ fst <$> decimal (mode !! 1)
       if i > defaultQueryCnt
-         then pure [makeReqFromUpdate update $ "[错误] 索引超出界限。"]
+         then pure [makeReqFromUpdate update "[错误] 索引超出界限。"]
          else do
-           let magCachePath = "wldata/TR-" <> (Text.unpack $ head mode) <>".txt"
+           let magCachePath = "wldata/TR-" <> Text.unpack (head mode) <>".txt"
            exist <- doesFileExist magCachePath
            if not exist
-              then pure [makeReqFromUpdate update $ "[错误] 本地无缓存。"]
+              then pure [makeReqFromUpdate update "[错误] 本地无缓存。"]
               else do
                 mags <- eitherDecode <$> BL.readFile magCachePath :: IO (Either String Array)
                 case mags of
                   Left err -> pure [makeReqFromUpdate update $ "[错误] " <> Text.pack err]
                   Right lst -> pure [makeReqFromUpdate update $ "[磁链] " <> (Text.pack.show $ lst ! i)]
-    _ -> pure [makeReqFromUpdate update $ "[错误] 参数错误。"]
+    _ -> pure [makeReqFromUpdate update "[错误] 参数错误。"]
 
 type FileName = BL.ByteString
 type FileSize = BL.ByteString

@@ -28,18 +28,18 @@ drawTextArray path quality texts = do
       case font_MSYaHei of
         Left err -> logErr "Drawing pic" err
         Right msYaHei -> do
-          let makeTextList cnt (x:xs) = (printTextRanges (V2 5 (22*cnt)) $
-                fmap (\(text, (FontDescrb color font)) ->
+          let makeTextList cnt (x:xs) = printTextRanges (V2 5 22*cnt) (
+                fmap (\(text, FontDescrb color font) ->
                   TextRange (case font of
                                FZHeiTi -> fzHeiTi
                                MSYaHei -> msYaHei)
-                    (PointSize 16) text (slcColor color)) x) : (makeTextList (cnt+1) xs)
+                    (PointSize 16) text (slcColor color)) x) : makeTextList (cnt+1) xs
               makeTextList _ [] = []
           let png = decodePng.BL.toStrict . encodePng $
                      renderDrawing 1800 (11 + 22 * length texts) (PixelRGBA8 255 255 255 255) .
-                       withTexture (uniformTexture $ PixelRGBA8 0 0 0 255) $ do
+                       withTexture (uniformTexture $ PixelRGBA8 0 0 0 255) $
                          foldr (>>) (pure ()) (makeTextList 1 texts)
-          traverse_ ((BL.writeFile path) .imageToJpg quality) png
+          traverse_ (BL.writeFile path .imageToJpg quality) png
 
 
 data FontDescrb = FontDescrb FontColor FontType
@@ -52,6 +52,6 @@ slcColor FontRed = redTexture
 slcColor FontBlue = blueTexture
 slcColor FontBlack = blackTexture
 
-slcFont :: FontType -> [Char]
+slcFont :: FontType -> String
 slcFont FZHeiTi = "fonts/fz_hei_ti.ttf"
 slcFont MSYaHei = "fonts/ms_ya_hei.ttf"
