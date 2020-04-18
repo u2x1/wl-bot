@@ -9,7 +9,7 @@ data SendMsg = SendMsg {
   , target_type :: TargetType
   , target_plat :: Platform
   , reply_id :: Maybe Integer
-  , imgUrls :: Maybe [Text]
+  , imgUrl :: Maybe Text
   , imgPath :: Maybe String
   , text :: Maybe Text
 } deriving (Show)

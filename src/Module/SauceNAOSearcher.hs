@@ -16,14 +16,14 @@ import Data.Maybe
 import           Module.NHentaiQuerier
 
 runSauceNAOSearch :: String -> String -> IO (Either Text.Text SnaoResults)
-runSauceNAOSearch apiKey imgUrl = runMEitherT $ do
+runSauceNAOSearch apiKey imgUrl' = runMEitherT $ do
   r <- liftEither getErrHint $ try $ Wreq.getWith opts "https://saucenao.com/search.php"
   liftEither (pack.("解析JSON错误: "<>)) (pure $ eitherDecode $ r ^. responseBody)
   where opts = defaults & param "db" .~ ["999"]
                         & param "output_type" .~ ["2"]
                         & param "numres" .~ ["3"]
                         & param "api_key" .~ [Text.pack apiKey]
-                        & param "url" .~ [Text.pack imgUrl]
+                        & param "url" .~ [Text.pack imgUrl']
 
 getErrHint :: SomeException -> Text
 getErrHint excp =
@@ -36,15 +36,15 @@ processSnaoQuery :: (Text.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
   fmap (getTextT' update) $
     runMEitherT $ do
-      imgUrl <- liftMaybe "无效图片。" $ pure $ head <$> message_image_urls update
-      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" imgUrl
+      imgUrl' <- liftMaybe "无效图片。" $ pure $ head <$> message_image_urls update
+      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" imgUrl'
       sendMsgs <- lift $ traverse (getText update) (sr_results result)
       pure $ catMaybes sendMsgs
 
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst =
   case sr_ext_url rst of
-    Just extUrls -> pure $ Just $ makeReqFromUpdate' update [sr_thumbnail rst] $ Misc.unlines
+    Just extUrls -> pure $ Just $ makeReqFromUpdate' update (sr_thumbnail rst) $ Misc.unlines
                                                [ "[相似度] " <> sr_similarity rst
                                                , "[图源] " <> head extUrls]
     _ ->  maybe' (sr_doujinshi_name rst) (pure Nothing) (\dn -> do

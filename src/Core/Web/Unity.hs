@@ -4,9 +4,9 @@ module Core.Web.Unity where
 import Control.Lens
 import Core.Type.Unity.Request    as U
 import Core.Web.Telegram          as T
+import Core.Data.Telegram         as T
 import Core.Web.Mirai             as Q
 import Core.Data.Mirai            as Q
-import Core.Type.Telegram.Request as T
 import Network.Wreq
 import Data.ByteString.Lazy
 import Data.Aeson
@@ -21,8 +21,11 @@ sendTextMsg msg config =
 
     -- Handle Telegram message
     Telegram ->
-      postTgRequest (config ^. tg_token) "sendMessage" $
-        toJSON (T.SendMsg (U.chat_id msg) (fromMaybe "" $ U.text msg))
+      case T.transMsg msg of
+        Left p -> postTgRequest' (config ^. tg_token) "sendPhoto" p
+        Right s -> postTgRequest (config ^. tg_token)
+          (if isJust $ imgUrl msg then "sendPhoto" else "sendMessage") $
+            toJSON s
 
     -- Handle QQ message
     QQ ->

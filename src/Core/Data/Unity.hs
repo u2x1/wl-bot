@@ -3,9 +3,9 @@ module Core.Data.Unity where
 
 import           Core.Type.Unity.Update    as UN
 import           Core.Type.Unity.Request   as UR
-import           Core.Type.Telegram.Update as T
 import           Core.Type.Mirai.Update    as Q
 import           Core.Data.Mirai           as Q
+import           Core.Type.Telegram.Update as T
 import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
@@ -14,9 +14,9 @@ makeReqFromUpdate'' update imgpath txt =
   UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing (Just imgpath) (Just txt)
 
 -- | Make SendMsg from Update with image urls and text.
-makeReqFromUpdate' :: UN.Update -> [Text.Text] -> Text.Text -> UR.SendMsg
-makeReqFromUpdate' update imgurls txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)(Just imgurls) Nothing (Just txt)
+makeReqFromUpdate' :: UN.Update -> Text.Text -> Text.Text -> UR.SendMsg
+makeReqFromUpdate' update imgurl txt =
+  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)(Just imgurl) Nothing (Just txt)
 
 makeReqFromUpdate :: UN.Update -> Text.Text -> UR.SendMsg
 makeReqFromUpdate update txt =

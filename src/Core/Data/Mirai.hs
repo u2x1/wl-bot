@@ -17,13 +17,13 @@ getText cqMsgs = let x = fromJust.mrm_text <$> filter (\m -> mrm_type m == "Plai
                      if null x then Nothing else Just $ mconcat x
 
 transMsg :: UN.SendMsg -> [Message]
-transMsg m = (fromText (UN.text m)) <> (fromImgUrl (UN.imgUrls m)) <> (fromImgPath (UN.imgPath m))
+transMsg m = fromText (UN.text m) <> fromImgUrl (UN.imgUrl m) <> fromImgPath (UN.imgPath m)
   where fromText t = case t of
                        Just txt -> [Message "Plain" (Just txt) Nothing Nothing]
                        _ -> []
 
         fromImgUrl imgs = case imgs of
-                            Just urls -> fmap (\u -> Message "Image" Nothing (Just u) Nothing) urls
+                            Just url -> [Message "Image" Nothing (Just url) Nothing]
                             _ -> []
 
         fromImgPath imgs = case Text.pack <$> imgs of

@@ -18,8 +18,8 @@ import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Base64.Lazy as Base64
 
 runWAITSearch :: String -> IO (Either String WAITResults)
-runWAITSearch imgUrl = do
-  img <- get imgUrl
+runWAITSearch imgUrl' = do
+  img <- get imgUrl'
   let imgBase64 = Base64.encode $ img ^. responseBody
   r <- try $ post "https://trace.moe/api/search" ["image" := imgBase64]
                 :: IO (Either SomeException (Response BL.ByteString))

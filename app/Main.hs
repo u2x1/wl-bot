@@ -9,8 +9,8 @@ import           Control.Monad.IO.Class                (liftIO)
 import           Control.Exception                     (try, SomeException)
 import           Control.Concurrent                    (forkIO)
 import qualified Data.ByteString.Lazy      as BL
-import           Data.Aeson
-import           Data.Aeson.Types
+import           Data.Aeson (eitherDecode, decode, (.:), pairs, (.=))
+import           Data.Aeson.Types (parseMaybe)
 import           Core.Data.Unity
 import           Core.Type.Telegram.Update as TG
 import           Core.Type.Mirai.Update    as MR
@@ -33,20 +33,28 @@ main = do
 runServer :: Config -> IO ()
 runServer oriConfig = do
   config <- liftIO $ do
-    r <- Wreq.post ((oriConfig ^. mirai_server)<>"auth") $ pairs ("authKey" .= (oriConfig ^. mirai_auth_key))
-    let sk = decodeSessionKey $ r ^. responseBody
-    logWT Info $ "SessionKey: [" <> show sk <>"]"
+    r <- try $ Wreq.post ((oriConfig ^. mirai_server) <>"auth") $ pairs ("authKey" .= (oriConfig ^. mirai_auth_key)) :: IO (Either SomeException (Response BL.ByteString))
+    case r of
+      Right r' -> do
+        let sk = decodeSessionKey $ r' ^. responseBody
+        logWT Info $ "SessionKey: [" <> show sk <>"]"
 
-    _ <- Wreq.post ((oriConfig ^. mirai_server)<>"verify") $
-      pairs ("sessionKey" .= sk <> "qq" .= (oriConfig ^. mirai_qq_id))
-    maybe' sk (logErr "Setting Mirai session" "Failed" >> return oriConfig) $ \s ->
-      return $ set mirai_session_key s oriConfig
+        _ <- Wreq.post ((oriConfig ^. mirai_server)<>"verify") $
+          pairs ("sessionKey" .= sk <> "qq" .= (oriConfig ^. mirai_qq_id))
+        maybe' sk (logErr "Setting Mirai session" "Failed" >> return oriConfig) $ \s ->
+          return $ set mirai_session_key s oriConfig
+      Left err -> do
+        logErr "Getting session key from Mirai" (show err)
+        logWT Error "Failed to lanuch Mirai part."
+        return oriConfig
 
   _ <- checkModuleRequirements
   _ <- forkIO (checkModuleEventsIn1Day config)
 
 
-  _ <- forkIO $ WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config)
+  _ <- if config ^. mirai_session_key /= ""
+          then Just <$> forkIO (WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config))
+          else pure Nothing
   scotty (config ^. port) $ handleTGMsg config
 
 handleTGMsg :: Config -> ScottyM ()
