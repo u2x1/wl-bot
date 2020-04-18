@@ -18,7 +18,7 @@ blueTexture = Just . uniformTexture $ PixelRGBA8 0 0 255 255
 redTexture :: Maybe (Texture PixelRGBA8)
 redTexture = Just . uniformTexture $ PixelRGBA8 255 0 0 255
 
-drawTextArray :: String -> Int -> [[(String, FontDescrb)]] -> IO ()
+drawTextArray :: String -> Int -> [[DrawText]] -> IO ()
 drawTextArray path quality texts = do
   font_FZHeiTi <- loadFontFile $ slcFont FZHeiTi
   font_MSYaHei <- loadFontFile $ slcFont MSYaHei
@@ -28,8 +28,8 @@ drawTextArray path quality texts = do
       case font_MSYaHei of
         Left err -> logErr "Drawing pic" err
         Right msYaHei -> do
-          let makeTextList cnt (x:xs) = printTextRanges (V2 5 22*cnt) (
-                fmap (\(text, FontDescrb color font) ->
+          let makeTextList cnt (x:xs) = printTextRanges (V2 5 (22*cnt)) (
+                fmap (\(DrawText text (FontDescrb color font)) ->
                   TextRange (case font of
                                FZHeiTi -> fzHeiTi
                                MSYaHei -> msYaHei)
@@ -41,11 +41,16 @@ drawTextArray path quality texts = do
                          foldr (>>) (pure ()) (makeTextList 1 texts)
           traverse_ (BL.writeFile path .imageToJpg quality) png
 
+data DrawText = DrawText String FontDescrb
+  deriving (Show)
 
 data FontDescrb = FontDescrb FontColor FontType
+  deriving (Show)
 
 data FontColor = FontRed | FontBlack | FontBlue
+  deriving (Show)
 data FontType  = FZHeiTi | MSYaHei
+  deriving (Show)
 
 slcColor :: FontColor -> Maybe (Texture PixelRGBA8)
 slcColor FontRed = redTexture

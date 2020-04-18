@@ -51,30 +51,33 @@ getTrtInfos links = do
     writeChan ch $ TrtInfo <$> tName <*> tDate <*> pure tFiles <*> tMag) links
   catMaybes <$> replicateM (length links) (readChan ch)
 
-generateTrtTexts :: [TrtInfo] -> IO [[(String, FontDescrb)]]
+generateTrtTexts :: [TrtInfo] -> IO [[DrawText]]
 generateTrtTexts trtInfos =
   pure $ mconcat.addNumber $ fmap concatTrtInfo trtInfos
   where addNumber = go 0
-        go :: Int -> [[[(String,FontDescrb)]]] -> [[[(String, FontDescrb)]]]
+        go :: Int -> [[[DrawText]]] -> [[[DrawText]]]
         go cnt (x:xs) = modifyHead x (("["<>show cnt<>"] ") <>) : go (cnt + 1) xs
         go _ [] = []
-        modifyHead (((x,y):ys):xs) f = ((f x, y):ys) : xs
+        modifyHead (((DrawText x y):ys):xs) f = (DrawText (f x) y : ys) : xs
         modifyHead [] _ = []
         modifyHead ([]:_) _ = []
 
-tab :: BL.ByteString
+tab :: String
 tab = "    "
 
-concatTrtInfo :: TrtInfo -> [[(String, FontDescrb)]]
-concatTrtInfo info = map (map (first (toString.hLongText))) $
-  [[(trt_name info <> "\t\t", defaultFont), (trt_date info, redFont)]] <>
-  map (\(a,b) -> [(tab <> "|- " <> a <> " ", defaultFont), (b, redFont)]) (
-    filter (\(y,x) -> snd (BL.breakAfter "BitComet" y) == "" && (snd (BL.breakAfter "G" x) /= "" || snd (BL.breakAfter "M" x) /= "")) $
-      trt_files info)
-        where hLongText x = let len = BL.length x in
-                                     if len > 170
-                                        then BL.take 160 x <> " ... " <> BL.drop (len-5) x
-                                        else x
+concatTrtInfo :: TrtInfo -> [[DrawText]]
+concatTrtInfo info =
+  [[DrawText (toString (trt_name info) <> "\t\t") defaultFont,
+    DrawText (toString (trt_date info)) redFont]] <>
+  addIndent (filter notUselessInfo $ trt_files info)
+  where
+    notUselessInfo (y, x) = snd (BL.breakAfter "BitComet" y) == ""
+                        && (snd (BL.breakAfter "G" x) /= "" || snd (BL.breakAfter "M" x) /= "")
+    hLongText x = let len = BL.length x in
+                        if len > 170
+                           then BL.take 160 x <> " ... " <> BL.drop (len-5) x
+                           else x
+    addIndent = map (\(a,b) -> [DrawText (tab <> "|- " <> toString (hLongText a) <> " ") defaultFont, DrawText (toString b)  redFont])
 
 processTrtQurey :: (Text.Text, Update) -> IO [SendMsg]
 processTrtQurey (cmdBody, update) = do
