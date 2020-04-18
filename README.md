@@ -1,6 +1,12 @@
 # wl-bot
 
-This is a program used to provide tools for QQ and Telegram groups, written in Haskell.
+This is a program used to provide tools for QQ and Telegram groups, written in Haskell for study purpose.
+
+## NOTE
+
+The Telegram part API is **not** fully implement. It's unable to get images from updates. The image's url getting from Telegram updates contains bot token, and I have no idea handling this.
+
+But it will still be able to send photos wherever on Telegram or QQ.
 
 ## How it works
 
@@ -22,6 +28,8 @@ Get all commands using `/help`.
 ## How to use it
 
 1. Download the pre-build binary file from [release](https://github.com/Nutr1t07/wl-bot/releases/).
+
+   [mirai-api-http](https://github.com/mamoe/mirai-api-http) uses userelative path to send images, so we need to put it under [mirai-api-http](https://github.com/mamoe/mirai-api-http)'s directory `mirai/plugins/MiraiAPIHTTP`. All local images will be stored under `images`.
 
 2. Create `config.json` under the same directory as `wl-bot-exe`:
 
@@ -47,7 +55,7 @@ Get all commands using `/help`.
 | ws\_host            | Mirai WebSocket listening address    |                          |
 | ws\_port            | Mirai WebSocket listening port       |                          |
 | mirai\_auth\_key    | mirai-api-http auth key              |                          |
-| mirai\_qq\_id       | QQ bot id                            |                          |
+| mirai\_qq\_id       | QQ id used to get sessionkey         |                          |
 
 
 3. Enable Mirai **Http API** plugin, set the config of the plugin:
@@ -73,3 +81,4 @@ Get all commands using `/help`.
 - [pixiv.cat](https://pixiv.cat/)
 - [NHentai](https://nhentai.net/)
 - [JavDB](https://javdb.com/)
+- [Torrent Kitty](https://www.torrentkitty.tv/)
