@@ -25,7 +25,9 @@ searchAllBetweenBL _ _ "" = []
 searchAllBetweenBL left right content =
   let matchLeft  = snd $ BL.breakAfter left content
       matchRight = BL.breakOn right matchLeft in
-  fst matchRight : searchAllBetweenBL left right (snd matchRight)
+  if fst matchRight /= ""
+     then fst matchRight : searchAllBetweenBL left right (snd matchRight)
+     else searchAllBetweenBL left right (snd matchRight)
 
 unlines :: [Text.Text] -> Text.Text
 unlines = mconcat.List.intersperse "\n"

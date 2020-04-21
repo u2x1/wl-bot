@@ -31,14 +31,12 @@ defaultQueryCnt = 10
 
 getTrtLinks :: Int -> String -> IO (Maybe [String])
 getTrtLinks num keyword = do
-  r' <- try (get $ "https://www.torrentkitty.tv/search/" <> keyword)
-    :: IO (Either SomeException (Response BL.ByteString))
-  case r' of
-    Right r ->
-      let links = Misc.searchAllBetweenBL "/information/" "\"" $ BL.drop 18000 $ r ^. responseBody
-          linksTen = if length links > num then take num links else links in
-      pure . Just $ toString.("https://www.torrentkitty.tv/information/"<>) <$> linksTen
-    Left _ -> pure Nothing
+  r <- get $ "https://www.torrentkitty.tv/search/" <> keyword
+  let links = Misc.searchAllBetweenBL "/information/" "\"" $ BL.drop 18000 $ r ^. responseBody
+      linksTen = if length links > num then take num links else links
+  if null linksTen
+     then pure Nothing
+     else pure . Just $ toString.("https://www.torrentkitty.tv/information/"<>) <$> linksTen
 
 getTrtInfos :: [String] -> IO [TrtInfo]
 getTrtInfos links = do

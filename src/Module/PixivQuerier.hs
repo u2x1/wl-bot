@@ -25,8 +25,8 @@ processPixivQuery (cmdBody, update) = do
          if not exist
             then lift $ BL.writeFile imgCachePath $ rsp ^. responseBody
             else lift $ pure ()
-         pure $ Text.pack imgCachePath
-  pure [makeReqFromUpdate update $ getTextT x]
+         pure $ Text.pack $ drop 7 imgCachePath
+  pure [makeReqFromUpdate'' update (Text.unpack $ getTextT x) ""]
 
 getErrHint :: SomeException -> Text.Text
 getErrHint err
