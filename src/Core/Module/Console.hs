@@ -19,7 +19,7 @@ import           Module.JavDBSearcher
 import           Module.DiceHelper
 --import           Module.BilibiliHelper
 import           Module.SolidotFetcher
---import           Module.YandeFetcher
+import           Module.YandeFetcher
 import           Module.SauceNAOSearcher
 import           Module.TorrentSearcher
 import           Module.PixivQuerier
@@ -52,13 +52,17 @@ commandProcess update config = do
 checkModuleRequirements :: IO ()
 checkModuleRequirements = do
   let rqmt = mconcat [ sfRqmt
- --                    , ydRqmt
+                     , ydRqmt
                      , noteRqmt]
+      drctRqmt = mconcat [trtDrctRqmt]
   de <- doesDirectoryExist "wldata"
   _ <- if de then pure () else createDirectory "wldata"
   traverse_ (\fileName -> do
     fe <- doesFileExist fileName
     if fe then pure () else writeFile fileName "") rqmt
+  traverse_ (\drctName -> do
+    fe <- doesDirectoryExist drctName
+    if fe then pure () else createDirectory drctName) drctRqmt
 
 type Microsecond = Int
 oneMin :: Microsecond
@@ -66,7 +70,7 @@ oneMin = 60000000
 
 checkModuleEventsIn1Day :: Config -> IO ()
 checkModuleEventsIn1Day config = forever $ do
-  msgs <- sequence [checkNewOfSolidot]
+  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
   traverse_ (`sendTextMsg` config) $ mconcat msgs
   threadDelay (oneMin*60*24)
 
@@ -82,10 +86,10 @@ getCommandHelps (cmdBody, update) =
             Just (_, (_, h)) -> pure [makeReqFromUpdate update ("/" <> cmdBody <> h)]
             Nothing -> pure [makeReqFromUpdate update "未找到指令。"]
      else
-       pure [makeReqFromUpdate update $ "使用/help COMMAND查看详细\n" <> (Misc.unlines $
-         fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands)]
+       pure [makeReqFromUpdate update $ "使用/help COMMAND查看详细\n" <> Misc.unlines
+         (fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands)]
 
-commands :: [(Text.Text, (((Text.Text, Update) -> IO [SendMsg]), (Text.Text, Text.Text)))]
+commands :: [(Text.Text, ((Text.Text, Update) -> IO [SendMsg], (Text.Text, Text.Text)))]
 commands =
   [ ("bk"      , (processBaiduQuery     , ("百科摘要", " ENTRY: 从baike.baidu.com抓取摘要")))
   , ("svnote"  , (saveNote              , ("笔记"    , " KEY CONTENT: 由机器人上传一条信息到服务器保存")))

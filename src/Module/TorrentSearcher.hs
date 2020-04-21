@@ -13,6 +13,7 @@ import           Data.Text.Read              as Text
 import           Data.Text.Lazy                       (toStrict)
 import           Data.Text.Lazy.Encoding              (decodeUtf8)
 import           Control.Concurrent
+import           Control.Exception
 import           Data.Either
 import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
@@ -20,7 +21,6 @@ import           Core.Data.Unity
 import           Data.Maybe
 import           Data.Foldable
 import           Data.Aeson
-import           Data.Bifunctor
 import           Data.Vector                          ((!))
 import           System.Directory
 
@@ -29,12 +29,16 @@ import           Module.Pic
 defaultQueryCnt :: Int
 defaultQueryCnt = 10
 
-getTrtLinks :: Int -> String -> IO [String]
+getTrtLinks :: Int -> String -> IO (Maybe [String])
 getTrtLinks num keyword = do
-  r <- get $ "https://www.torrentkitty.tv/search/" <> keyword
-  let links = Misc.searchAllBetweenBL "/information/" "\"" $ BL.drop 18000 $ r ^. responseBody
-      linksTen = if length links > num then take num links else links
-  pure $ toString.("https://www.torrentkitty.tv/information/"<>) <$> linksTen
+  r' <- try (get $ "https://www.torrentkitty.tv/search/" <> keyword)
+    :: IO (Either SomeException (Response BL.ByteString))
+  case r' of
+    Right r ->
+      let links = Misc.searchAllBetweenBL "/information/" "\"" $ BL.drop 18000 $ r ^. responseBody
+          linksTen = if length links > num then take num links else links in
+      pure . Just $ toString.("https://www.torrentkitty.tv/information/"<>) <$> linksTen
+    Left _ -> pure Nothing
 
 getTrtInfos :: [String] -> IO [TrtInfo]
 getTrtInfos links = do
@@ -84,23 +88,35 @@ processTrtQurey (cmdBody, update) = do
   let mode = Text.splitOn " " cmdBody
   case length mode of
     0 -> pure []
-    1 -> do
-      let imgCachePath = "images/TR-" <> Text.unpack cmdBody <> ".jpg"
-      exist <- doesFileExist imgCachePath
-      if not exist
+    1 ->
+      if cmdBody == "!clear"
          then do
-           infos <- getTrtInfos =<< getTrtLinks defaultQueryCnt (Text.unpack cmdBody)
-           texts <- generateTrtTexts infos
-           drawTextArray imgCachePath 50 texts
-           BL.writeFile ("wldata/TR-" <> Text.unpack cmdBody <> ".txt") $ encode $ fmap trt_mag infos
-         else pure ()
-      pure [makeReqFromUpdate'' update (drop 7 imgCachePath) ""]
+           removeDirectoryRecursive "wldata/Torrents" >> createDirectory "wldata/Torrents"
+           pure [makeReqFromUpdate update "[信息] 缓存已清除。"]
+         else do
+           let imgCachePath = "images/TR-" <> Text.unpack cmdBody <> ".jpg"
+           exist <- doesFileExist imgCachePath
+           if not exist
+              then do
+                links' <- getTrtLinks defaultQueryCnt (Text.unpack cmdBody)
+                case links' of
+                  Just links -> do
+                    infos <- getTrtInfos links
+                    texts <- generateTrtTexts infos
+                    drawTextArray imgCachePath 50 texts
+                    BL.writeFile ("wldata/Torrents/TR-" <> Text.unpack cmdBody <> ".txt") $ encode $ fmap trt_mag infos
+                  _ -> pure ()
+              else pure ()
+           exist' <- doesFileExist imgCachePath
+           if not exist'
+              then pure [makeReqFromUpdate update "[错误] 未找到磁链。"]
+              else pure [makeReqFromUpdate'' update (drop 7 imgCachePath) ""]
     2 -> do
       let i = fromRight 0 $ fst <$> decimal (mode !! 1)
       if i > defaultQueryCnt
          then pure [makeReqFromUpdate update "[错误] 索引超出界限。"]
          else do
-           let magCachePath = "wldata/TR-" <> Text.unpack (head mode) <>".txt"
+           let magCachePath = "wldata/Torrents/TR-" <> Text.unpack (head mode) <>".txt"
            exist <- doesFileExist magCachePath
            if not exist
               then pure [makeReqFromUpdate update "[错误] 本地无缓存。"]
@@ -108,8 +124,11 @@ processTrtQurey (cmdBody, update) = do
                 mags <- eitherDecode <$> BL.readFile magCachePath :: IO (Either String Array)
                 case mags of
                   Left err -> pure [makeReqFromUpdate update $ "[错误] " <> Text.pack err]
-                  Right lst -> pure [makeReqFromUpdate update $ "[磁链] " <> (Text.pack.show $ lst ! i)]
+                  Right lst -> pure [makeReqFromUpdate update $ "[磁链] " <> showStr (lst ! i)]
     _ -> pure [makeReqFromUpdate update "[错误] 参数错误。"]
+    where
+      showStr (String x) = Text.pack $ show x
+      showStr _ = ""
 
 type FileName = BL.ByteString
 type FileSize = BL.ByteString
@@ -124,3 +143,6 @@ defaultFont :: FontDescrb
 defaultFont = FontDescrb FontBlack FZHeiTi
 redFont :: FontDescrb
 redFont = FontDescrb FontRed FZHeiTi
+
+trtDrctRqmt :: [String]
+trtDrctRqmt = ["wldata/Torrents"]

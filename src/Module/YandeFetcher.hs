@@ -21,8 +21,8 @@ getPopImgUrls = do
   pure $ toString.("https://files.yande.re/sample/"<>).(<>"/yande.re.jpg") <$>
     searchAllBetweenBL "/sample/" "/" (BL.drop 100000 $ r ^. responseBody)
 
-sendYandePopImgs :: IO [SendMsg]
-sendYandePopImgs = do
+checkYandePopImgs :: IO [SendMsg]
+checkYandePopImgs = do
   imgUrls' <- getPopImgUrls
   subs <- parseYandeSubscriber
   pure $ mconcat $ subs . Text.pack <$> imgUrls'
