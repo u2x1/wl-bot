@@ -16,11 +16,9 @@ import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter)
 import qualified Data.Text                    as Text
 import           Data.Text                             (strip, Text, unpack)
 import           Data.Text.Lazy                        (toStrict)
-import           Data.Text.Lazy.Builder                (toLazyText)
 import           Data.Text.Lazy.Encoding
 import           Data.List                             (intersperse)
 import           Core.Type.EitherT
-import           HTMLEntities.Decoder
 
 getWords :: BL.ByteString -> [Text]
 getWords "" = []
@@ -29,10 +27,10 @@ getWords str = (strip.toStrict.decodeUtf8 $ fst (breakOn "<" xs)) : getWords xs
 
 -- Select fragments that are not equal to "&nbsp;" or started with "\n"
 concatWord :: [Text] -> Text
-concatWord oStr = toStrict.toLazyText.htmlEncodedText $ (mconcat.intersperse "\n\n") s
+concatWord oStr = (mconcat.intersperse "\n\n") s
   where s = foldr addNextLine [] $
               filter
-              (\str -> str /= "" && Text.head str /= '[')
+              (\str -> str /= "&nbsp;" && str /= "" && Text.head str /= '[')
               oStr
         addNextLine x [] = [x]
         addNextLine x xs = let a = strip x in

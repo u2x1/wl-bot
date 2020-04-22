@@ -4,8 +4,10 @@ module Core.Data.Mirai where
 import           Core.Type.Mirai.Update
 import qualified Core.Type.Unity.Request as UN
 import           Core.Type.Mirai.Request
-
-import qualified Data.Text                      as Text
+import           HTMLEntities.Decoder     (htmlEncodedText)
+import qualified Data.Text               as Text
+import           Data.Text.Lazy           (toStrict)
+import           Data.Text.Lazy.Builder   (toLazyText)
 import           Data.Maybe
 
 getImgUrls :: [MRMsg] -> Maybe [String]
@@ -19,7 +21,7 @@ getText cqMsgs = let x = fromJust.mrm_text <$> filter (\m -> mrm_type m == "Plai
 transMsg :: UN.SendMsg -> [Message]
 transMsg m = fromText (UN.text m) <> fromImgUrl (UN.imgUrl m) <> fromImgPath (UN.imgPath m)
   where fromText t = case t of
-                       Just txt -> [Message "Plain" (Just txt) Nothing Nothing]
+                       Just txt -> [Message "Plain" (Just (toStrict.toLazyText.htmlEncodedText $ txt)) Nothing Nothing]
                        _ -> []
 
         fromImgUrl imgs = case imgs of

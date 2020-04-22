@@ -7,6 +7,9 @@ import Core.Type.Telegram.Request as T
 import Core.Type.Unity.Request as UR
 import Network.Wreq (Part, partFile, partText)
 import Data.Text (pack)
+import  HTMLEntities.Decoder     (htmlEncodedText)
+import  Data.Text.Lazy           (toStrict)
+import  Data.Text.Lazy.Builder   (toLazyText)
 
 import Data.Maybe
 
@@ -19,6 +22,13 @@ getMessageFromUpdate tgUpdate = (msg_type, msg)
 
 transMsg :: UR.SendMsg -> Either [Part] T.SendMsg
 transMsg msg
-  | isJust $ imgPath msg = Left [partText "chat_id" (pack.show $ UR.chat_id msg), partText "reply_to_message_id" (pack.show $ UR.reply_id msg), partFile "photo" (fromJust $ ("images/"<>) <$>imgPath msg)]
-  | isJust $ imgUrl msg = Right (T.SendMsg (UR.chat_id msg) Nothing (imgUrl msg) (UR.text msg) "HTML" (reply_id msg))
-  | otherwise = Right (T.SendMsg (UR.chat_id msg) (UR.text msg) Nothing Nothing "HTML" (reply_id msg))
+  | isJust $ imgPath msg =
+      Left [ partText "chat_id" (pack.show $ UR.chat_id msg)
+           , partText "reply_to_message_id" (pack.show $ UR.reply_id msg)
+           , partFile "photo" (fromJust $ ("images/"<>) <$>imgPath msg)]
+  | isJust $ imgUrl msg =
+      Right (T.SendMsg (UR.chat_id msg) Nothing (imgUrl msg) (UR.text msg) "HTML" (reply_id msg))
+  | otherwise =
+      Right (T.SendMsg (UR.chat_id msg) (decodeHtml <$> UR.text msg) Nothing Nothing "HTML" (reply_id msg))
+  where
+    decodeHtml = toStrict.toLazyText.htmlEncodedText

@@ -13,7 +13,6 @@ import           Data.Text.Read              as Text
 import           Data.Text.Lazy                       (toStrict)
 import           Data.Text.Lazy.Encoding              (decodeUtf8)
 import           Control.Concurrent
-import           Control.Exception
 import           Data.Either
 import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
@@ -55,14 +54,16 @@ getTrtInfos links = do
 
 generateTrtTexts :: [TrtInfo] -> IO [[DrawText]]
 generateTrtTexts trtInfos =
-  pure $ mconcat.addNumber $ fmap concatTrtInfo trtInfos
-  where addNumber = go 0
-        go :: Int -> [[[DrawText]]] -> [[[DrawText]]]
-        go cnt (x:xs) = modifyHead x (("["<>show cnt<>"] ") <>) : go (cnt + 1) xs
-        go _ [] = []
-        modifyHead (((DrawText x y):ys):xs) f = (DrawText (f x) y : ys) : xs
-        modifyHead [] _ = []
-        modifyHead ([]:_) _ = []
+  pure $ addInfo.mconcat.addNumber $ fmap concatTrtInfo trtInfos
+  where
+    addInfo = ([DrawText "==数据来自TorrentKitty==" redFont] :)
+    addNumber = go 0
+    go :: Int -> [[[DrawText]]] -> [[[DrawText]]]
+    go cnt (x:xs) = modifyHead x (("["<>show cnt<>"] ") <>) : go (cnt + 1) xs
+    go _ [] = []
+    modifyHead (((DrawText x y):ys):xs) f = (DrawText (f x) y : ys) : xs
+    modifyHead [] _ = []
+    modifyHead ([]:_) _ = []
 
 tab :: String
 tab = "    "
@@ -125,7 +126,7 @@ processTrtQurey (cmdBody, update) = do
                   Right lst -> pure [makeReqFromUpdate update $ "[磁链] " <> showStr (lst ! i)]
     _ -> pure [makeReqFromUpdate update "[错误] 参数错误。"]
     where
-      showStr (String x) = Text.pack $ show x
+      showStr (String x) = x
       showStr _ = ""
 
 type FileName = BL.ByteString

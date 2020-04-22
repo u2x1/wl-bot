@@ -4,7 +4,7 @@ This is a program used to provide tools for QQ and Telegram groups, written in H
 
 ## NOTE
 
-The Telegram part API is **not** fully implement. It's unable to get images from updates. The image's url getting from Telegram updates contains bot token, and I have no idea handling this.
+The Telegram part API is **not** fully implemented. It's unable to get images from updates. The image's url getting from Telegram updates contains bot token, and I have no idea handling this.
 
 But it will still be able to send photos wherever on Telegram or QQ.
 
