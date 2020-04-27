@@ -71,15 +71,11 @@ app :: Config -> WS.Connection -> IO b
 app config conn = do
     logWT Info "WebSocket connected."
     forever $ do
---        m <- WS.receiveData conn :: IO T.Text
---        logWT Info $ T.unpack m
         msg <- decode <$> WS.receiveData conn :: IO (Maybe MR.Update)
---        logWT Info $ show msg
         case msg of
           Just originUpdate ->
             case makeUpdateFromMR originUpdate of
               Just update -> do
---                _ <- logWT Info $ show update
                 _ <- liftIO $ forkIO (commandProcess update config)
                 liftIO $ pure ()
 

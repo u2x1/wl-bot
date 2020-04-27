@@ -3,7 +3,10 @@ module Module.SauceNAOSearcher where
 
 import           Network.Wreq as Wreq
 import           Control.Lens
-import           Data.Text    as Text (Text, pack, breakOn)
+import           Data.Text    as Text (Text, pack, unpack, breakOn)
+import           Data.Text.Lazy.Encoding (decodeUtf8)
+import           Data.Text.Lazy          (toStrict)
+import           Data.ByteString.Lazy (ByteString)
 import           Data.Aeson
 import           Control.Exception
 import           Core.Type.Unity.Update  as UU
@@ -21,7 +24,7 @@ runSauceNAOSearch apiKey imgUrl' = runMEitherT $ do
   liftEither (pack.("解析JSON错误: "<>)) (pure $ eitherDecode $ r ^. responseBody)
   where opts = defaults & param "db" .~ ["999"]
                         & param "output_type" .~ ["2"]
-                        & param "numres" .~ ["3"]
+                        & param "numres" .~ ["1"]
                         & param "api_key" .~ [Text.pack apiKey]
                         & param "url" .~ [Text.pack imgUrl']
 
@@ -43,10 +46,25 @@ processSnaoQuery (_, update) =
 
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst =
-  case sr_ext_url rst of
-    Just extUrls -> pure $ Just $ makeReqFromUpdate' update (sr_thumbnail rst) $ Misc.unlines
+  case head <$> sr_ext_url rst of
+    Just extUrl -> do
+      pixivInfo <-
+        if snd (breakOn "pixiv" extUrl) == ""
+           then pure Nothing
+           else do
+             r' <- try (get (unpack extUrl)) :: IO (Either SomeException (Response ByteString))
+             case r' of
+               Right r ->
+                 let authorId = decodeUtf8 <$>searchBetweenBL "userId\":\"" "\"" (r ^. responseBody)
+                     authorName = decodeUtf8 <$> searchBetweenBL "userName\":\"" "\"" (r ^. responseBody) in
+                 return $ (\x y -> ["[画师] " <> x] <> ["[画师ID] " <> y]) <$> authorName <*> authorId
+               Left _ -> pure Nothing
+      pure $ Just $ makeReqFromUpdate' update (sr_thumbnail rst) $ Misc.unlines $
                                                [ "[相似度] " <> sr_similarity rst
-                                               , "[图源] " <> head extUrls]
+                                               , "[图源] " <> extUrl] <>
+                                                 case pixivInfo of
+                                                   Just x -> toStrict <$> x
+                                                   Nothing -> []
     _ ->  maybe' (sr_doujinshi_name rst) (pure Nothing) (\dn -> do
           n <- getNHentaiBookId dn
           pure $ Just $ makeReqFromUpdate update $ Misc.unlines $ ["[本子名] " <> dn] <>

@@ -18,7 +18,7 @@ packPixivImgUrl = Text.unpack.("https://pixiv.cat/"<>) . (<>".jpg")
 
 processPixivQuery :: (Text.Text, Update) -> IO [SendMsg]
 processPixivQuery (cmdBody, update) = do
-  x <- runMEitherT $ do
+  x' <- runMEitherT $ do
          rsp <- liftEither getErrHint $ try (get $ packPixivImgUrl cmdBody)
          let imgCachePath = "images/Pixiv-" <> Text.unpack cmdBody <> ".jpg"
          exist <- lift (doesFileExist imgCachePath)
@@ -26,7 +26,12 @@ processPixivQuery (cmdBody, update) = do
             then lift $ BL.writeFile imgCachePath $ rsp ^. responseBody
             else lift $ pure ()
          pure $ Text.pack $ drop 7 imgCachePath
-  pure [makeReqFromUpdate'' update (Text.unpack $ getTextT x) ""]
+  let x = getTextT x'
+
+  -- Check if error occur
+  if snd (Text.breakOn "jpg" x) == ""
+     then pure [makeReqFromUpdate update x]
+     else pure [makeReqFromUpdate'' update (Text.unpack x) ""]
 
 getErrHint :: SomeException -> Text.Text
 getErrHint err

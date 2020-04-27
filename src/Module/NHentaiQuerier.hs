@@ -17,6 +17,7 @@ import           Control.Lens
 import           Control.Monad
 import           Data.List
 import           Data.Foldable
+import           Core.Type.EitherT
 
 type Title = Text.Text
 type Id    = Text.Text
@@ -24,15 +25,15 @@ type Id    = Text.Text
 getNHentaiBookId :: Title -> IO (Maybe (Title, Id))
 getNHentaiBookId bName = do
   let opts = defaults & param "query" .~ [bName]
-  r <- Wreq.getWith opts $ "https://nhentai.net/api/galleries/search"
+  r <- Wreq.getWith opts "https://nhentai.net/api/galleries/search"
   pure $
-    either' (eitherDecode $ r ^. responseBody) (\e -> Just (Text.pack e,"")) $ (\nh ->
-      maybe' (nh_result nh) Nothing (\results -> Just $
-        maybe' (find (\x -> elem "chinese" (nh_tags x)) results)
-          (getInfo $ head results)
-          (\finalResult -> getInfo finalResult)))
+    either' (eitherDecode $ r ^. responseBody) (\e -> Just (Text.pack e,"")) (\nh ->
+      maybe' (nh_result nh) Nothing (\results ->
+        if null results
+           then Nothing
+           else Just $ maybe' (find (elem "chinese" . nh_tags) results) (getInfo $ head results) getInfo))
   where
-    getInfo x = (,) ((nh_title) x) (nh_id x)
+    getInfo x = (,) (nh_title x) (nh_id x)
 
 processNHentaiQuery :: (Text.Text, Update) -> IO [SendMsg]
 processNHentaiQuery (cmdBody, update) =
@@ -40,16 +41,17 @@ processNHentaiQuery (cmdBody, update) =
      then do
        logWT Info $
          "NHentai query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
-       r <- getNHentaiBookId $ content
+       r <- getNHentaiBookId content
        case r of
-         Just result -> let msg = Misc.unlines ["[标题] " <> fst result, "[链接] https://nhentai.net/g/" <> snd result] in
+         Just result -> let msg = Misc.unlines ["[标题] " <> fst result
+                                              , "[链接] https://nhentai.net/g/" <> snd result] in
                           pure [makeReqFromUpdate update msg]
          Nothing -> pure [makeReqFromUpdate update "无结果。"]
      else pure []
   where
     content = Text.strip cmdBody
 
-data NHentaiResults = NHentaiResults {
+newtype NHentaiResults = NHentaiResults {
     nh_result :: Maybe [NHentaiResult]
 } deriving (Show, Generic)
 instance FromJSON NHentaiResults where
