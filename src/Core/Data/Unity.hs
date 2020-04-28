@@ -9,18 +9,20 @@ import           Core.Type.Telegram.Update as T
 import           Core.Type.Universal
 import qualified Data.Text                 as Text
 
+fromUpdate :: UN.Update -> Maybe Text.Text -> Maybe String -> Maybe Text.Text -> SendMsg
+fromUpdate update = UR.SendMsg (UN.chat_id update) (UN.user_id update)(UN.message_type update) (UN.platform update) (Just $ UN.message_id update)
+
 makeReqFromUpdate'' :: UN.Update -> String -> Text.Text -> UR.SendMsg
-makeReqFromUpdate'' update imgpath txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing (Just imgpath) (Just txt)
+makeReqFromUpdate'' update imgpath txt = fromUpdate update Nothing (Just imgpath) (Just txt)
 
 -- | Make SendMsg from Update with image urls and text.
 makeReqFromUpdate' :: UN.Update -> Text.Text -> Text.Text -> UR.SendMsg
 makeReqFromUpdate' update imgurl txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update)(Just imgurl) Nothing (Just txt)
+  fromUpdate update (Just imgurl) Nothing (Just txt)
 
 makeReqFromUpdate :: UN.Update -> Text.Text -> UR.SendMsg
 makeReqFromUpdate update txt =
-  UR.SendMsg (UN.chat_id update) (UN.message_type update) (UN.platform update) (Just $ UN.message_id update) Nothing Nothing (Just txt)
+  fromUpdate update Nothing Nothing (Just txt)
 
 makeUpdateFromTG :: T.Update -> Maybe UN.Update
 makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> chatId <*> pure msgTxt <*> Just Nothing <*> msgType <*> msgId
@@ -37,14 +39,15 @@ makeUpdateFromTG tgUpdate = UN.Update <$> Just Telegram <*> userId <*> chatId <*
 
 makeUpdateFromMR :: Q.Update -> Maybe UN.Update
 makeUpdateFromMR cqUpdate = UN.Update <$> Just QQ <*> userId <*> chatId <*> pure msgTxt <*> pure msgImage <*> msgType <*> msgId
-  where userId   = Just $ Q.mrs_id .  Q.mirai_sender   $ cqUpdate
+  where userId   = Just $ Q.mrs_id  $ Q.mirai_sender     cqUpdate
         msgId    = Just $ Q.mirai_message_id             cqUpdate
-        msgTxt   = Q.getText.Q.mirai_message_chain $     cqUpdate
-        msgImage = Q.getImgUrls.Q.mirai_message_chain$   cqUpdate
-        chatId   = case Q.mrs_group_id . Q.mirai_sender$ cqUpdate of
+        msgTxt   = Q.getText $ Q.mirai_message_chain     cqUpdate
+        msgImage = Q.getImgUrls $ Q.mirai_message_chain  cqUpdate
+        chatId   = case Q.mrs_group_id $ Q.mirai_sender  cqUpdate of
                      Nothing -> userId
                      grpid   -> grpid
         msgType  = case Q.mirai_type cqUpdate of
                      "FriendMessage" -> Just Private
+                     "TempMessage"   -> Just Temp
                      "GroupMessage"  -> Just Group
                      _        -> Nothing

@@ -11,7 +11,7 @@ import           Core.Data.Unity
 import           Control.Concurrent
 import           Control.Monad
 import           Utils.Config
---import Utils.Logging
+--import         Utils.Logging
 import qualified Utils.Misc as Misc
 import           Module.BaikeQuerier
 import           Module.NoteSaver
@@ -98,7 +98,7 @@ commands =
   , ("cxlsubsd", (rmSubscribe           , ("新闻"    , " : 取消订阅solidot.org")))
   , ("dc"      , (processDiceRolling    , ("骰子"    , " DICE: 生成随机骰子(如d6,2d10)")))
   , ("sp"      , (processSnaoQuery      , ("搜图"    , " PIC: 使用图片从saucenao.com搜图")))
-  , ("asc"     , (processAscii2dSearch  , ("搜图"    , " PIC: 使用图片从ascii2d.net搜图")))
+  , ("spu"     , (processAscii2dSearch  , ("搜图"    , " PIC: 使用图片获得Ascii2d与Yandex搜图链接")))
   , ("nht"     , (processNHentaiQuery   , ("搜本子"  , " NAME: 使用本子名从NHentai.net查询本子")))
   , ("fh"      , (processJavDBQuery     , ("搜番号"  , " NUMBER: 从JavDB查询番号")))
   , ("am"      , (processWAITQuery      , ("搜番"    , " PIC: 使用图片从trace.moe(WAIT)查询番剧名")))

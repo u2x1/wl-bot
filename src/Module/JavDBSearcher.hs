@@ -5,7 +5,7 @@ import Network.Wreq
 import qualified Data.ByteString.Lazy as BL
 import Utils.Misc as Misc
 import qualified Data.Text as Text
-import Core.Type.Unity.Request
+import Core.Type.Unity.Request (SendMsg)
 import Core.Type.Unity.Update
 import Core.Data.Unity
 import Utils.Logging

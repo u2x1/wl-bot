@@ -8,7 +8,8 @@ import GHC.Generics
 import Utils.Json
 
 data SendMRMsg = SendMRMsg {
-    mr_target          :: Integer
+    mr_qq              :: Maybe Integer
+  , mr_group           :: Maybe Integer
   , mr_sessionKey      :: String
   , mr_quote           :: Maybe Integer
   , mr_messageChain    :: [Message]

@@ -65,7 +65,7 @@ parseSubscriber = do
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
   pure $ traverse (uncurry3 SendMsg) infos . Just
   where
-    uncurry3 f (a, b, c) = f a b c Nothing Nothing Nothing
+    uncurry3 f (a, b, c) = f a a b c Nothing Nothing Nothing
     getSubscriberInfos [userId, plat, targetType] = Just
       ( fromRight 0 $ fst <$> decimal userId
       , case targetType of

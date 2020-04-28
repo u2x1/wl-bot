@@ -7,7 +7,7 @@ import           Data.Aeson
 import           Data.Aeson.Types
 import           Utils.Json
 import           Utils.Misc as Misc
-import           Core.Type.Unity.Request
+import           Core.Type.Unity.Request (SendMsg)
 import           Core.Type.Unity.Update
 import           Core.Data.Unity
 import           GHC.Generics
@@ -17,7 +17,6 @@ import           Control.Lens
 import           Control.Monad
 import           Data.List
 import           Data.Foldable
-import           Core.Type.EitherT
 
 type Title = Text.Text
 type Id    = Text.Text

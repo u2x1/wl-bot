@@ -7,7 +7,7 @@ import           Core.Type.Unity.Update
 import           Core.Type.Unity.Request
 import           Core.Data.Unity
 import           Control.Lens
-import           Data.Text               as Text (Text)
+import           Data.Text               as Text (Text, pack)
 import           Data.Text.Lazy.Encoding
 import           Data.Text.Lazy          (toStrict)
 import           Core.Type.EitherT
@@ -27,6 +27,8 @@ processAscii2dSearch (_, update) = do
     imgUrl' <- liftMaybe "无效图片。" (pure $ head <$> message_image_urls update)
     result <- liftMaybe "无结果。"   (getAscii2dUrl imgUrl')
     pure $ Misc.unlines
-       [ "[颜色搜索] " <> fst result
-       , "[特征搜索] " <> snd result]
+       [ "[Ascii2d颜色] " <> fst result
+       , "[Ascii2d特征] " <> snd result
+       , "[Yandex搜图] " <> yandexHost <> pack imgUrl']
   pure [makeReqFromUpdate update $ getTextT x]
+    where yandexHost = "https://yandex.com/images/search?source=collections&rpt=imageview&url="

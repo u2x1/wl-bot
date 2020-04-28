@@ -34,7 +34,7 @@ parseYandeSubscriber = do
   let infos = catMaybes $ getSubscriberInfos <$> subscribers
   pure $ traverse (uncurry3 SendMsg) infos
   where
-    uncurry3 f (a, b, c) x = f a b c Nothing (Just x) Nothing Nothing
+    uncurry3 f (a, b, c) x = f a a b c Nothing (Just x) Nothing Nothing
     getSubscriberInfos [userId, plat, targetType] = Just
       ( fromRight 0 $ fst <$> decimal userId
       , case targetType of

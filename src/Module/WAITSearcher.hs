@@ -10,7 +10,7 @@ import Utils.Logging
 
 import qualified Data.Text as Text
 import Core.Data.Unity
-import Core.Type.Unity.Request
+import Core.Type.Unity.Request (SendMsg)
 import Core.Type.Unity.Update
 import Utils.Misc as Misc
 import Control.Exception

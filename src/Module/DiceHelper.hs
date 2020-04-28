@@ -4,7 +4,7 @@ module Module.DiceHelper where
 import qualified Data.Text as Text
 import System.Random
 import Control.Monad
-import Core.Type.Unity.Request
+import Core.Type.Unity.Request (SendMsg)
 import Core.Type.Unity.Update
 import Core.Data.Unity
 
