@@ -30,6 +30,6 @@ sendTextMsg msg config =
     -- Handle QQ message
     QQ ->
       case target_type msg of
-        Private -> Q.sendPrivMsg (chat_id msg) (Q.transMsg msg) config (reply_id msg)
-        Temp    -> Q.sendTempMsg (user_id msg) (chat_id msg) (Q.transMsg msg) config (reply_id msg)
+        Private -> Q.sendPrivMsg (chat_id msg) (Q.transMsg msg) config
+        Temp    -> Q.sendTempMsg (user_id msg) (chat_id msg) (Q.transMsg msg) config
         Group   -> Q.sendGrpMsg  (chat_id msg) (Q.transMsg msg) config (reply_id msg)

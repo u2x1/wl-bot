@@ -72,7 +72,7 @@ checkModuleEventsIn1Day :: Config -> IO ()
 checkModuleEventsIn1Day config = forever $ do
   msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
   traverse_ (`sendTextMsg` config) $ mconcat msgs
-  threadDelay (oneMin*60*24)
+  threadDelay (oneMin*60*6)
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config = traverse_ (\x -> sendTextMsg x config >> threadDelay delay)

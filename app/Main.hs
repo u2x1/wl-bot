@@ -73,7 +73,6 @@ app config conn = do
     forever $ do
         -- m <- WS.receiveData conn :: IO T.Text
         -- logWT Info $ T.unpack m
-
         msg <- decode <$> WS.receiveData conn :: IO (Maybe MR.Update)
         logWT Info $ show msg
         case msg of
