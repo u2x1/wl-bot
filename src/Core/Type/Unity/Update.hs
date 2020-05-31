@@ -10,4 +10,5 @@ data Update = Update {
   , message_image_urls :: Maybe [String]
   , message_type       :: TargetType
   , message_id         :: Integer
+  , reply_id           :: Maybe Integer
 } deriving (Show)

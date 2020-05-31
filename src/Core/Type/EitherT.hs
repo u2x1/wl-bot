@@ -22,7 +22,7 @@ instance Monad MEitherT where
                               Right a  -> runMEitherT $ f a
 
 lift :: IO a -> MEitherT a
-lift = MEitherT . (fmap Right)
+lift = MEitherT . fmap Right
 
 liftMaybe :: Text -> IO (Maybe a) -> MEitherT a
 liftMaybe t x = do

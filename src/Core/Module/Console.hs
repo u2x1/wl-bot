@@ -1,15 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Module.Console where
 
-import qualified Data.Text as Text
+import           Data.Text as Text (strip, breakOn, Text, tail, pack)
 import           Data.Foldable
+import           Data.List (intersperse)
+import           Data.Maybe               (fromMaybe)
+import           Data.Time
 import           System.Directory
 import           Core.Type.Unity.Update
-import           Core.Type.Unity.Request
+import           Core.Type.Unity.Request  (SendMsg)
 import           Core.Web.Unity
 import           Core.Data.Unity
 import           Control.Concurrent
-import           Control.Monad
+--import           Control.Monad
 import           Utils.Config
 --import         Utils.Logging
 import qualified Utils.Misc as Misc
@@ -28,12 +31,15 @@ import           Module.WAITSearcher
 import           Module.Ascii2dSearcher
 import           Module.GetImgUrl
 
-getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
-getHandler cmdHeader = fst <$> lookup (Text.tail cmdHeader) commands
+commandProcess :: Update -> Config -> IO ()
+commandProcess update config = do
+  _ <- logMsg update
+  msgs <- getMsgs2Send update
+  traverse_ (`sendTextMsg` config) msgs
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
-  case message_text update of
+  case dropWhile (==' ') <$> message_text update of
     Just msgTxt ->
       if head msgTxt == '/' || head msgTxt == '.' || head msgTxt == '。'
          then do
@@ -44,10 +50,8 @@ getMsgs2Send update =
          else pure []
     _ -> pure []
 
-commandProcess :: Update -> Config -> IO ()
-commandProcess update config = do
-  msgs <- getMsgs2Send update
-  traverse_ (`sendTextMsg` config) msgs
+getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
+getHandler cmdHeader = fst <$> lookup (Text.tail cmdHeader) commands
 
 checkModuleRequirements :: IO ()
 checkModuleRequirements = do
@@ -64,15 +68,30 @@ checkModuleRequirements = do
     fe <- doesDirectoryExist drctName
     if fe then pure () else createDirectory drctName) drctRqmt
 
+logMsg :: Update -> IO ()
+logMsg update = do
+  curnTime <- getCurrentTime
+  let txt = curnTimeStr <> "> " <> txt' <> "\r\n"
+      txt' = mconcat $ intersperse " || " [msgId, userId, chatId, msgTxt, msgImg]
+      userId = show $ user_id update
+      chatId = show $ chat_id update
+      msgId  = show $ message_id update
+      msgTxt = fromMaybe "" $ message_text update
+      msgImg = unwords $ fromMaybe [""] $ message_image_urls update
+      curnTimeStr = formatTime defaultTimeLocale "%Y/%m/%d %H:%M" curnTime
+  appendFile "wlMsg.log" txt
+
 type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
+-- Temporarily disable.
 checkModuleEventsIn1Day :: Config -> IO ()
-checkModuleEventsIn1Day config = forever $ do
-  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
-  traverse_ (`sendTextMsg` config) $ mconcat msgs
-  threadDelay (oneMin*60*6)
+checkModuleEventsIn1Day config = pure ()
+--checkModuleEventsIn1Day config = forever $ do
+--  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
+--  traverse_ (`sendTextMsg` config) $ mconcat msgs
+--  threadDelay (oneMin*60*6)
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config = traverse_ (\x -> sendTextMsg x config >> threadDelay delay)

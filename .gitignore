@@ -5,3 +5,4 @@ config.json
 test/serverTests.sh
 wldata/
 fonts/
+wlMsg.log

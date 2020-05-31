@@ -14,7 +14,9 @@ import           Core.Type.Unity.Request as UR
 import           Utils.Misc as Misc
 import           Core.Data.Unity
 import           Core.Type.EitherT
-import Data.Maybe
+import           Core.Data.MsgLog
+import           Data.Maybe
+import           Utils.Logging
 
 import           Module.NHentaiQuerier
 

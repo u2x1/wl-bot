@@ -33,7 +33,9 @@ main = do
 runServer :: Config -> IO ()
 runServer oriConfig = do
   config <- liftIO $ do
-    r <- try $ Wreq.post ((oriConfig ^. mirai_server) <>"auth") $ pairs ("authKey" .= (oriConfig ^. mirai_auth_key)) :: IO (Either SomeException (Response BL.ByteString))
+    r <- try $ Wreq.post ((oriConfig ^. mirai_server) <>"auth")
+                 (pairs ("authKey" .= (oriConfig ^. mirai_auth_key)))
+                   :: IO (Either SomeException (Response BL.ByteString))
     case r of
       Right r' -> do
         let sk = decodeSessionKey $ r' ^. responseBody
@@ -45,7 +47,7 @@ runServer oriConfig = do
           return $ set mirai_session_key s oriConfig
       Left err -> do
         logErr "Getting session key from Mirai" (show err)
-        logWT Error "Failed to lanuch Mirai part."
+        logWT Error "Failed to lanuch Mirai handler."
         return oriConfig
 
   _ <- checkModuleRequirements
@@ -53,7 +55,8 @@ runServer oriConfig = do
 
 
   _ <- if config ^. mirai_session_key /= ""
-          then Just <$> forkIO (WS.runClient (config ^. ws_host) (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config))
+          then Just <$> forkIO (WS.runClient (config ^. ws_host)
+            (config ^. ws_port) ("/message?sessionKey="<>(config ^. mirai_session_key)) (app config))
           else pure Nothing
   scotty (config ^. port) $ handleTGMsg config
 
@@ -71,13 +74,13 @@ app :: Config -> WS.Connection -> IO b
 app config conn = do
     logWT Info "WebSocket connected."
     forever $ do
-        -- m <- WS.receiveData conn :: IO T.Text
-        -- logWT Info $ T.unpack m
+--        m <- WS.receiveData conn :: IO T.Text
+--        logWT Info $ T.unpack m
         msg <- decode <$> WS.receiveData conn :: IO (Maybe MR.Update)
-        logWT Info $ show msg
         case msg of
-          Just originUpdate ->
-            case makeUpdateFromMR originUpdate of
+          Just originUpdate -> do
+            mrUpdate <- makeUpdateFromMR' originUpdate
+            case mrUpdate of
               Just update -> do
                 _ <- liftIO $ forkIO (commandProcess update config)
 --                logWT Info $ show update

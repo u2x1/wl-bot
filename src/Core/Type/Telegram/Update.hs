@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 module Core.Type.Telegram.Update where
 
 import Data.Aeson
@@ -15,12 +15,19 @@ data Update = Update {
 instance FromJSON Update
 
 data Message = Message {
-    message_id :: Integer
-  , from :: User
-  , chat :: Chat
-  , text :: Maybe String
+    tgm_message_id :: Integer
+  , tgm_from :: User
+  , tgm_chat :: Chat
+  , tgm_text :: Maybe String
+  , tgm_reply_id :: Maybe Integer
 } deriving (Eq, Show, Generic)
-instance FromJSON Message
+instance FromJSON Message where
+  parseJSON = withObject "Message" $ \v -> Message
+    <$> (v .: "message_id")
+    <*> (v .: "from")
+    <*> (v .: "chat")
+    <*> (v .: "text")
+    <*> ((v .: "reply_to_message") >>= (.:? "message_id"))
 
 data Chat = Chat {
     chat_id :: Integer
