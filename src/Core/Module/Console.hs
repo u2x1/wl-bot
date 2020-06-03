@@ -1,21 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Module.Console where
 
-import           Data.Text as Text (strip, breakOn, Text, tail, pack)
-import           Data.Foldable
-import           Data.List (intersperse)
-import           Data.Maybe               (fromMaybe)
-import           Data.Time
-import           System.Directory
-import           Core.Type.Unity.Update
+import           Data.Text as T           (strip, breakOn, Text, tail, pack)
+import           Data.Foldable            (traverse_)
+import           System.Directory         (doesDirectoryExist, doesFileExist, createDirectory)
+import           Core.Type.Unity.Update   (Update, message_text)
 import           Core.Type.Unity.Request  (SendMsg)
-import           Core.Web.Unity
-import           Core.Data.Unity
-import           Control.Concurrent
---import           Control.Monad
-import           Utils.Config
+import           Core.Web.Unity           (sendTextMsg)
+import           Core.Data.Unity          (makeReqFromUpdate)
+import           Core.Data.MsgLog         (logMsg)
+import           Control.Concurrent       (threadDelay)
+import           Control.Monad            (forever)
+import           Utils.Config             (Config)
 --import         Utils.Logging
-import qualified Utils.Misc as Misc
+import qualified Utils.Misc as Misc       (unlines)
 import           Module.BaikeQuerier
 import           Module.NoteSaver
 import           Module.JavDBSearcher
@@ -43,15 +41,15 @@ getMsgs2Send update =
     Just msgTxt ->
       if head msgTxt == '/' || head msgTxt == '.' || head msgTxt == '。'
          then do
-           let command = Text.breakOn " " $ Text.pack msgTxt
+           let command = T.breakOn " " $ T.pack msgTxt
            case getHandler (fst command) of
-             Just handler -> handler (Text.strip $ snd command, update)
+             Just handler -> handler (T.strip $ snd command, update)
              _ -> pure []
          else pure []
     _ -> pure []
 
-getHandler :: Text.Text -> Maybe ((Text.Text, Update) -> IO [SendMsg])
-getHandler cmdHeader = fst <$> lookup (Text.tail cmdHeader) commands
+getHandler :: Text -> Maybe ((Text, Update) -> IO [SendMsg])
+getHandler cmdHeader = fst <$> lookup (T.tail cmdHeader) commands
 
 checkModuleRequirements :: IO ()
 checkModuleRequirements = do
@@ -68,37 +66,22 @@ checkModuleRequirements = do
     fe <- doesDirectoryExist drctName
     if fe then pure () else createDirectory drctName) drctRqmt
 
-logMsg :: Update -> IO ()
-logMsg update = do
-  curnTime <- getCurrentTime
-  let txt = curnTimeStr <> "> " <> txt' <> "\r\n"
-      txt' = mconcat $ intersperse " || " [msgId, userId, chatId, msgTxt, msgImg]
-      userId = show $ user_id update
-      chatId = show $ chat_id update
-      msgId  = show $ message_id update
-      msgTxt = fromMaybe "" $ message_text update
-      msgImg = unwords $ fromMaybe [""] $ message_image_urls update
-      curnTimeStr = formatTime defaultTimeLocale "%Y/%m/%d %H:%M" curnTime
-  appendFile "wlMsg.log" txt
-
 type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
--- Temporarily disable.
 checkModuleEventsIn1Day :: Config -> IO ()
-checkModuleEventsIn1Day config = pure ()
---checkModuleEventsIn1Day config = forever $ do
---  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
---  traverse_ (`sendTextMsg` config) $ mconcat msgs
---  threadDelay (oneMin*60*6)
+checkModuleEventsIn1Day config = forever $ do
+  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
+  traverse_ (`sendTextMsg` config) $ mconcat msgs
+  threadDelay (oneMin*60*6)
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config = traverse_ (\x -> sendTextMsg x config >> threadDelay delay)
 
 -- Module: Help --
 
-getCommandHelps :: (Text.Text, Update) -> IO [SendMsg]
+getCommandHelps :: (Text, Update) -> IO [SendMsg]
 getCommandHelps (cmdBody, update) =
   if cmdBody /= ""
      then case lookup cmdBody commands of
@@ -108,7 +91,7 @@ getCommandHelps (cmdBody, update) =
        pure [makeReqFromUpdate update $ "使用/help COMMAND查看详细\n" <> Misc.unlines
          (fmap (\(cmd, (_,(c,_))) ->"/" <> cmd <> ": "<> c) commands)]
 
-commands :: [(Text.Text, ((Text.Text, Update) -> IO [SendMsg], (Text.Text, Text.Text)))]
+commands :: [(Text, ((Text, Update) -> IO [SendMsg], (Text, Text)))]
 commands =
   [ ("bk"      , (processBaiduQuery     , ("百科摘要", " ENTRY: 从baike.baidu.com抓取摘要")))
   , ("svnote"  , (saveNote              , ("笔记"    , " KEY CONTENT: 由机器人上传一条信息到服务器保存")))

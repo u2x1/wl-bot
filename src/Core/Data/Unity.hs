@@ -9,7 +9,6 @@ import           Core.Type.Unity.Request   as UR (SendMsg(SendMsg))
 import           Core.Type.Universal
 import           Core.Data.MsgLog
 import           Core.Data.Mirai                 (getText, getImgUrls)
-import           Data.Maybe                      (catMaybes)
 import           Data.Text                       (Text)
 
 -- | Create payload with local image paths and text.

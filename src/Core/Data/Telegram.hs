@@ -11,6 +11,7 @@ import Data.Text.Lazy.Builder           (toLazyText)
 import Data.Maybe                       (fromJust, isNothing, isJust)
 import HTMLEntities.Decoder             (htmlEncodedText)
 import Network.Wreq                     (Part, partFile, partText)
+import Control.Lens                     ((^.))
 
 -- | Get Telegram Message (Message or EditedMessage) from Telegram Update
 getMessageFromUpdate :: TU.Update -> (Int, Maybe Message)
@@ -23,13 +24,25 @@ getMessageFromUpdate tgUpdate = (msg_type, msg)
 -- | Transform SendMsg into [Part] when local image upload is required.
 transMsg :: UR.SendMsg -> Either [Part] TR.SendMsg
 transMsg msg
-  | isJust $ imgPath msg =
-      Left [ partText "chat_id" (pack.show $ UR.chat_id msg)
-           , partText "reply_to_message_id" (pack.show $ UR.reply_id msg)
-           , partFile "photo" (fromJust $ ("images/"<>) <$>imgPath msg)]
-  | isJust $ imgUrl msg =
-      Right (TR.SendMsg (UR.chat_id msg) Nothing (imgUrl msg) (UR.text msg) "HTML" (reply_id msg))
-  | otherwise =
-      Right (TR.SendMsg (UR.chat_id msg) (decodeHtml <$> UR.text msg) Nothing Nothing "HTML" (reply_id msg))
+  | isJust $ msg ^. imgPath = Left
+      [ partText "chat_id" (pack.show $ msg ^. UR.chat_id)
+      , partText "reply_to_message_id" (pack.show $ msg ^. UR.reply_id)
+      , partFile "photo" (fromJust $ ("images/"<>) <$> msg ^. imgPath)]
+  | isJust $ msg ^. imgUrl = Right $
+      TR.SendMsg 
+        (msg ^. UR.chat_id)
+        Nothing 
+        (msg ^. imgUrl)
+        (msg ^. UR.text)
+        "HTML"
+        (msg ^. reply_id)
+  | otherwise = Right $
+      TR.SendMsg
+        (msg ^. UR.chat_id)
+        (decodeHtml <$> msg ^. UR.text)
+        Nothing
+        Nothing
+        "HTML"
+        (msg ^. reply_id)
   where
     decodeHtml = toStrict.toLazyText.htmlEncodedText

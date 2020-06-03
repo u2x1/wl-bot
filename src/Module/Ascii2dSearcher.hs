@@ -9,7 +9,6 @@ import           Core.Data.Unity
 import           Control.Lens
 import           Data.Text               as Text (Text, pack)
 import           Data.Text.Lazy.Encoding
-import           Core.Data.MsgLog
 import           Data.Text.Lazy          (toStrict)
 import           Core.Type.EitherT
 

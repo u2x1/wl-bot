@@ -9,6 +9,7 @@ import           Data.Text                     (pack)
 import           Data.Text.Lazy                (toStrict)
 import           Data.Text.Lazy.Builder        (toLazyText)
 import           Data.Maybe                    (catMaybes, fromJust)
+import           Control.Lens                  ((^.))
 
 -- | Get a list of image urls from Mirai messages.
 getImgUrls :: [MRMsg] -> Maybe [String]
@@ -22,7 +23,7 @@ getText cqMsgs = let x = fromJust.mrm_text <$> filter (\m -> mrm_type m == "Plai
 
 -- | Transform Unity SendMsg to Mirai Messages.
 transMsg :: UR.SendMsg -> [Message]
-transMsg m = fromText (UR.text m) <> fromImgUrl (UR.imgUrl m) <> fromImgPath (UR.imgPath m)
+transMsg m = fromText (m ^. UR.text) <> fromImgUrl (m ^. UR.imgUrl) <> fromImgPath (m ^. UR.imgPath)
   where
     fromText t = case t of
         Just txt -> [Message "Plain" (Just (toStrict.toLazyText.htmlEncodedText $ txt)) Nothing Nothing]

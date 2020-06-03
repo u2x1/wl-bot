@@ -21,5 +21,6 @@ transTag tag =
     Error   -> "Error"
     Debug   -> "Debug"
 
+-- | Log errors with action name and details.
 logErr :: String -> String -> IO ()
 logErr msg errText = logWT Error (msg ++ ": " ++ errText)

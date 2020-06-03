@@ -2,7 +2,6 @@
 module Core.Type.Mirai.Update where
 
 import Data.Aeson
-import Data.Aeson.Types
 import GHC.Generics
 import Utils.Json
 
