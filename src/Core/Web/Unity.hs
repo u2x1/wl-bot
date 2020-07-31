@@ -12,23 +12,22 @@ import Network.Wreq
 import Data.ByteString.Lazy
 import Data.Aeson
 import Utils.Config
+import Utils.Logging
 import Data.Maybe
 
 import Core.Type.Universal
 
 type RB = Response ByteString
 
-sendTextMsg :: U.SendMsg -> Config -> IO (Response ByteString)
-sendTextMsg m c = do
-  s <- try (retry3Times (sendTextMsg' m c)) :: IO (Either SomeException RB)
+sendMsg :: U.SendMsg -> Config -> IO ()
+sendMsg m c = do
+  s <- try (sendMsg' m c) :: IO (Either SomeException RB)
   case s of
-    Right x -> return x
-    Left _  ->
-      let msg = (set imgUrl Nothing) . (set imgPath Nothing) . (set text (Just "Mirai boomed")) $ m in
-      retry3Times (sendTextMsg' msg c)
+    Right _ -> return ()
+    Left err  -> logErr "Sending msg" $ show err
 
-sendTextMsg' :: U.SendMsg -> Config -> IO (Response ByteString)
-sendTextMsg' msg config =
+sendMsg' :: U.SendMsg -> Config -> IO RB
+sendMsg' msg config =
   case msg ^. target_plat of
     Telegram ->
       case T.transMsg msg of

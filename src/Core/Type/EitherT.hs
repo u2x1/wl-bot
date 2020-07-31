@@ -8,10 +8,10 @@ import Core.Data.Unity
 
 newtype MEitherT a = MEitherT { runMEitherT :: IO (Either Text a) }
 
-instance Functor (MEitherT) where
+instance Functor MEitherT where
   fmap = (<$>)
 
-instance Applicative (MEitherT) where
+instance Applicative MEitherT where
     pure  = MEitherT . pure . Right
     (<*>) = (<*>)
 

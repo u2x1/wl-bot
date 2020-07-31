@@ -27,8 +27,8 @@ processAscii2dSearch (_, update) = do
     imgUrl' <- liftMaybe "无效图片。" (pure $ head <$> message_image_urls update)
     result <- liftMaybe "无结果。"   (getAscii2dUrl imgUrl')
     pure $ Misc.unlines
-       [ "[Ascii2d颜色] " <> fst result
-       , "[Ascii2d特征] " <> snd result
-       , "[Yandex搜图] " <> yandexHost <> pack imgUrl']
+       [ "[Ascii2dC] " <> fst result
+       , "[Ascii2dB] " <> snd result
+       , "[Yandex] " <> yandexHost <> pack imgUrl']
   pure [makeReqFromUpdate update $ getTextT x]
     where yandexHost = "https://yandex.com/images/search?source=collections&rpt=imageview&url="

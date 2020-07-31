@@ -35,6 +35,9 @@ runServer oriConfig = do
     r <- try $ Wreq.post ((oriConfig ^. mirai_server) <> "auth")
                  (pairs ("authKey" .= (oriConfig ^. mirai_auth_key)))
                    :: IO (Either SomeException (Response BL.ByteString))
+
+    let decodeSessionKey rawHtml = parseMaybe (.: "session") =<< decode rawHtml
+
     case r of
       Right r' ->
         case decodeSessionKey $ r' ^. responseBody of
@@ -84,6 +87,3 @@ handleQQMsg config conn = do
                 void $ forkIO (commandProcess update config)
               Nothing -> pure ()
           Nothing -> pure ()
-
-decodeSessionKey :: BL.ByteString -> Maybe String
-decodeSessionKey rawHtml = parseMaybe (.: "session") =<< decode rawHtml
