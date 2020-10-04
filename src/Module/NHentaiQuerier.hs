@@ -1,22 +1,21 @@
-{-# LANGUAGE DeriveGeneric#-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Module.NHentaiQuerier where
 
-import qualified Data.Text as Text
-import           Data.Aeson
-import           Data.Aeson.Types
-import           Utils.Json
-import           Utils.Misc as Misc
-import           Core.Type.Unity.Request (SendMsg)
-import           Core.Type.Unity.Update
-import           Core.Data.Unity
-import           GHC.Generics
-import           Utils.Logging
-import           Network.Wreq as Wreq
 import           Control.Lens
 import           Control.Monad
-import           Data.List
+import           Core.Data.Unity
+import           Core.Type.Unity.Request (SendMsg)
+import           Core.Type.Unity.Update
+import           Data.Aeson
+import           Data.Aeson.Types
 import           Data.Foldable
+import qualified Data.Text               as Text
+import           GHC.Generics
+import           Network.Wreq            as Wreq
+import           Utils.Json
+import           Utils.Logging
+import           Utils.Misc              as Misc
 
 type Title = Text.Text
 type Id    = Text.Text
@@ -57,9 +56,9 @@ instance FromJSON NHentaiResults where
   parseJSON = dropParseJSON 3
 
 data NHentaiResult = NHentaiResult {
-    nh_id :: Text.Text
+    nh_id    :: Text.Text
   , nh_title :: Text.Text
-  , nh_tags :: [Text.Text]
+  , nh_tags  :: [Text.Text]
 } deriving (Show)
 instance FromJSON NHentaiResult where
   parseJSON = withObject "NHentaiResult" $ \v -> NHentaiResult
@@ -72,4 +71,4 @@ instance FromJSON NHentaiResult where
 parseId :: Value -> Parser Text.Text
 parseId (Number o) = pure $ (fst . Text.breakOn ".") $ Text.pack $ show o
 parseId (String o) = pure o
-parseId _ = mzero
+parseId _          = mzero

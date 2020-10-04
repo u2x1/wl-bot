@@ -1,27 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.TorrentSearcher where
 
-import           Network.Wreq
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
-import           Utils.Misc                  as Misc
-import qualified Data.ByteString.Lazy        as BL
-import           Data.ByteString.Lazy.UTF8            (toString)
-import qualified Data.Text                   as Text
-import           Data.ByteString.Lazy.Search as BL
-import           Data.Text.Read              as Text
-import           Data.Text.Lazy                       (toStrict)
-import           Data.Text.Lazy.Encoding              (decodeUtf8)
-import           Control.Concurrent
-import           Data.Either
-import           Core.Type.Unity.Update
-import           Core.Type.Unity.Request
 import           Core.Data.Unity
-import           Data.Maybe
-import           Data.Foldable
+import           Core.Type.Unity.Request
+import           Core.Type.Unity.Update
 import           Data.Aeson
-import           Data.Vector                          ((!))
+import qualified Data.ByteString.Lazy        as BL
+import           Data.ByteString.Lazy.Search as BL
+import           Data.ByteString.Lazy.UTF8   (toString)
+import           Data.Either
+import           Data.Foldable
+import           Data.Maybe
+import qualified Data.Text                   as Text
+import           Data.Text.Lazy              (toStrict)
+import           Data.Text.Lazy.Encoding     (decodeUtf8)
+import           Data.Text.Read              as Text
+import           Data.Vector                 ((!))
+import           Network.Wreq
 import           System.Directory
+import           Utils.Misc                  as Misc
 
 import           Module.Pic
 
@@ -60,10 +60,10 @@ generateTrtTexts trtInfos =
     addNumber = go 0
     go :: Int -> [[[DrawText]]] -> [[[DrawText]]]
     go cnt (x:xs) = modifyHead x (("["<>show cnt<>"] ") <>) : go (cnt + 1) xs
-    go _ [] = []
+    go _ []       = []
     modifyHead (((DrawText x y):ys):xs) f = (DrawText (f x) y : ys) : xs
-    modifyHead [] _ = []
-    modifyHead ([]:_) _ = []
+    modifyHead [] _                       = []
+    modifyHead ([]:_) _                   = []
 
 tab :: String
 tab = "    "
@@ -127,15 +127,15 @@ processTrtQurey (cmdBody, update) = do
     _ -> pure [makeReqFromUpdate update "[错误] 参数错误。"]
     where
       showStr (String x) = x
-      showStr _ = ""
+      showStr _          = ""
 
 type FileName = BL.ByteString
 type FileSize = BL.ByteString
 data TrtInfo = TrtInfo {
-    trt_name :: BL.ByteString
-  , trt_date :: BL.ByteString
+    trt_name  :: BL.ByteString
+  , trt_date  :: BL.ByteString
   , trt_files :: [(FileName, FileSize)]
-  , trt_mag :: Text.Text
+  , trt_mag   :: Text.Text
 } deriving (Show)
 
 defaultFont :: FontDescrb

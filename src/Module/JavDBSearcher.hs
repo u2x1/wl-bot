@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.JavDBSearcher where
 
-import Network.Wreq
-import qualified Data.ByteString.Lazy as BL
-import Utils.Misc as Misc
-import qualified Data.Text as Text
-import Core.Type.Unity.Request (SendMsg)
-import Core.Type.Unity.Update
-import Core.Data.Unity
-import Utils.Logging
-import Data.Text.Encoding
-import Data.ByteString.Lazy.UTF8 as UTF8
-import Control.Lens
+import           Control.Lens
+import           Core.Data.Unity
+import           Core.Type.Unity.Request   (SendMsg)
+import           Core.Type.Unity.Update
+import qualified Data.ByteString.Lazy      as BL
+import           Data.ByteString.Lazy.UTF8 as UTF8
+import qualified Data.Text                 as Text
+import           Data.Text.Encoding
+import           Network.Wreq
+import           Utils.Logging
+import           Utils.Misc                as Misc
 
 getFstUrl :: BL.ByteString -> Maybe String
 getFstUrl content = fixUrl $ UTF8.toString <$> Misc.searchBetweenBL "href=\"/v/" "\"" (BL.drop 20000 content)
@@ -29,7 +29,7 @@ runJavDBSearch query = do
     Just realUrl -> do
       realRsp <- get realUrl
       case getMagnet $ realRsp ^. responseBody of
-        Nothing -> pure Nothing
+        Nothing     -> pure Nothing
         Just magnet -> pure $ Just magnet
     where opts = defaults & param "q" .~ [query]
 
@@ -42,7 +42,7 @@ processJavDBQuery (cmdBody, update) =
          "Query: [" <> Text.unpack content <> "] sending from " <> show (user_id update)
        case result of
          Just r -> pure [makeReqFromUpdate update $ "[磁链] " <> r]
-         _ -> pure [makeReqFromUpdate update "无结果。"]
+         _      -> pure [makeReqFromUpdate update "无结果。"]
      else pure []
     where
       content = Text.strip cmdBody

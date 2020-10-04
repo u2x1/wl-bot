@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.DiceHelper where
 
-import qualified Data.Text as Text
-import System.Random
-import Control.Monad
-import Core.Type.Unity.Request (SendMsg)
-import Core.Type.Unity.Update
-import Core.Data.Unity
+import           Control.Monad
+import           Core.Data.Unity
+import           Core.Type.Unity.Request (SendMsg)
+import           Core.Type.Unity.Update
+import qualified Data.Text               as Text
+import           System.Random
 
-import Utils.Logging
+import           Utils.Logging
 
 parseDice :: Text.Text -> Maybe (Int, Int)
 parseDice rawMsg =

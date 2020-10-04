@@ -1,18 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Core.Type.Mirai.Request where
 
-import Data.Aeson
-import Data.Text (Text)
-import GHC.Generics
+import           Data.Aeson
+import           Data.Text    (Text)
+import           GHC.Generics
 
-import Utils.Json
+import           Utils.Json
 
 data SendMRMsg = SendMRMsg {
-    mr_qq              :: Maybe Integer
-  , mr_group           :: Maybe Integer
-  , mr_sessionKey      :: String
-  , mr_quote           :: Maybe Integer
-  , mr_messageChain    :: [Message]
+    mr_qq           :: Maybe String
+  , mr_group        :: Maybe String
+  , mr_sessionKey   :: String
+  , mr_quote        :: Maybe String
+  , mr_messageChain :: [Message]
 } deriving (Eq, Show, Generic)
 instance ToJSON SendMRMsg where
   toJSON = dropToJSON 3

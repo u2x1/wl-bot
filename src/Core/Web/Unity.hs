@@ -1,21 +1,22 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Core.Web.Unity where
 
-import Control.Lens
-import Control.Exception
-import Core.Type.Unity.Request    as U
-import Core.Web.Telegram          as T
-import Core.Data.Telegram         as T
-import Core.Web.Mirai             as Q
-import Core.Data.Mirai            as Q
-import Network.Wreq
-import Data.ByteString.Lazy
-import Data.Aeson
-import Utils.Config
-import Utils.Logging
-import Data.Maybe
+import           Control.Exception
+import           Control.Lens
+import           Core.Data.Mirai         as Q
+import           Core.Data.Telegram      as T
+import           Core.Type.Unity.Request as U
+import           Core.Web.Mirai          as Q
+import           Core.Web.Telegram       as T
+import           Data.Aeson
+import           Data.ByteString.Lazy
+import           Data.Maybe
+import           Network.Wreq
+import           Utils.Config
+import           Utils.Logging
 
-import Core.Type.Universal
+import           Core.Type.Universal
 
 type RB = Response ByteString
 
@@ -23,8 +24,8 @@ sendMsg :: U.SendMsg -> Config -> IO ()
 sendMsg m c = do
   s <- try (sendMsg' m c) :: IO (Either SomeException RB)
   case s of
-    Right _ -> return ()
-    Left err  -> logErr "Sending msg" $ show err
+    Right _  -> return ()
+    Left err -> logErr "Sending msg" $ show err
 
 sendMsg' :: U.SendMsg -> Config -> IO RB
 sendMsg' msg config =

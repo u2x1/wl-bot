@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Core.Type.EitherT where
 
-import Data.Text (Text)
-import Core.Type.Unity.Request
-import Core.Type.Unity.Update
-import Core.Data.Unity
+import           Core.Data.Unity
+import           Core.Type.Unity.Request
+import           Core.Type.Unity.Update
+import           Data.Text               (Text)
 
 newtype MEitherT a = MEitherT { runMEitherT :: IO (Either Text a) }
 
@@ -24,18 +24,25 @@ instance Monad MEitherT where
 lift :: IO a -> MEitherT a
 lift = MEitherT . fmap Right
 
+liftList :: Text -> IO [a] -> MEitherT [a]
+liftList t x = do
+  listx <- lift x
+  case listx of
+    [] -> MEitherT $ pure $ Left t
+    y  -> pure y
+
 liftMaybe :: Text -> IO (Maybe a) -> MEitherT a
 liftMaybe t x = do
   maybex <- lift x
   case maybex of
-    Nothing -> MEitherT $ pure $ Left t
+    Nothing    -> MEitherT $ pure $ Left t
     Just justx -> pure justx
 
 liftEither :: (e -> Text) -> IO (Either e a) -> MEitherT a
 liftEither f x = do
   eitherx <- lift x
   case eitherx of
-    Left t -> MEitherT $ pure $ Left (f t)
+    Left t       -> MEitherT $ pure $ Left (f t)
     Right rightx -> pure rightx
 
 getTextT :: Either Text Text -> Text

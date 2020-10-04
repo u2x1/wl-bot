@@ -1,21 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.WAITSearcher where
 
-import Network.Wreq
-import Data.Aeson
-import Data.Aeson.Types
-import Control.Lens
-import Control.Monad
-import Utils.Logging
+import           Control.Lens
+import           Control.Monad
+import           Data.Aeson
+import           Data.Aeson.Types
+import           Network.Wreq
+import           Utils.Logging
 
-import qualified Data.Text as Text
-import Core.Data.Unity
-import Core.Type.Unity.Request (SendMsg)
-import Core.Type.Unity.Update
-import Utils.Misc as Misc
-import Control.Exception
-import qualified Data.ByteString.Lazy as BL
-import Data.ByteString.Base64.Lazy as Base64
+import           Control.Exception
+import           Core.Data.Unity
+import           Core.Type.Unity.Request     (SendMsg)
+import           Core.Type.Unity.Update
+import           Data.ByteString.Base64.Lazy as Base64
+import qualified Data.ByteString.Lazy        as BL
+import qualified Data.Text                   as Text
+import           Utils.Misc                  as Misc
 
 runWAITSearch :: String -> IO (Either String WAITResults)
 runWAITSearch imgUrl' = do
@@ -25,17 +25,19 @@ runWAITSearch imgUrl' = do
                 :: IO (Either SomeException (Response BL.ByteString))
   case r of
     Right realR -> case eitherDecode $ realR ^. responseBody of
-                     Right x -> (pure.Right) x
+                     Right x  -> (pure.Right) x
                      Left str -> (pure.Left) $ "未找到近似图片。"<> str
     Left excp -> (pure.Left) $
            "请求错误: " <> show excp
 
 processWAITQuery :: (Text.Text, Update) -> IO [SendMsg]
-processWAITQuery (_, update) =
-   maybe' (message_image_urls update) (pure [makeReqFromUpdate update "无效图片。"]) (\imgUrls' -> do
-       result <- runWAITSearch $ head imgUrls'
+processWAITQuery (_, update) = let imgUrls = message_image_urls update in
+  if null imgUrls
+    then pure [makeReqFromUpdate update "无效图片。"]
+    else do
+       result <- runWAITSearch $ head imgUrls
        logWT Info $
-         "WAIT [" <> head imgUrls' <> "] sending from " <> show (user_id update)
+         "WAIT [" <> head imgUrls <> "] sending from " <> show (user_id update)
        either' result (\x -> pure [makeReqFromUpdate update $ Text.pack x]) (\rst ->
          pure [makeReqFromUpdate update . Misc.unlines $
            let fstRst = head $ wt_docs rst
@@ -47,7 +49,7 @@ processWAITQuery (_, update) =
            [ "[相似度] " <> Text.pack similarity
            , "[动漫] " <> anime
            , "[季度] " <> season
-           , "[位置] #" <> Text.pack episode <> " " <> toTime atTime]]))
+           , "[位置] #" <> Text.pack episode <> " " <> toTime atTime]])
         where
           toTime x = Text.pack $ show (div (round x) 60 :: Int) <> ":" <> show (mod (round x) 60 :: Int)
 
@@ -60,10 +62,10 @@ instance FromJSON WAITResults where
 
 data WAITResult = WAITResult {
     wt_similarity :: Float
-  , wt_anime :: Text.Text
-  , wt_season :: Text.Text
-  , wt_episode :: Text.Text
-  , wt_at :: Float
+  , wt_anime      :: Text.Text
+  , wt_season     :: Text.Text
+  , wt_episode    :: Text.Text
+  , wt_at         :: Float
 } deriving (Show)
 instance FromJSON WAITResult where
   parseJSON = withObject "WAITResults" $ \v -> WAITResult
@@ -76,4 +78,4 @@ instance FromJSON WAITResult where
 parseEpisode :: Value -> Parser Text.Text
 parseEpisode (Number o) = pure $ (fst . Text.breakOn ".") $ Text.pack $ show o
 parseEpisode (String o) = pure o
-parseEpisode _ = mzero
+parseEpisode _          = mzero

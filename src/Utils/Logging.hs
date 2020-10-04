@@ -1,7 +1,7 @@
 module Utils.Logging where
 
-import Data.Time
-import System.IO
+import           Data.Time
+import           System.IO
 
 data LogTag = Info | Warning | Error | Debug
 

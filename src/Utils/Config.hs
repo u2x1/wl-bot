@@ -1,8 +1,10 @@
-{-# LANGUAGE TemplateHaskell, RankNTypes, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Utils.Config where
 
-import Data.Aeson
-import Control.Lens
+import           Control.Lens
+import           Data.Aeson
 
 data Config = Config {
 --    admins     :: [Integer]

@@ -1,13 +1,14 @@
 module Module.Pic where
 
-import Codec.Picture (PixelRGBA8( .. ), decodePng, encodePng, decodePng)
-import Codec.Picture.Saving (imageToJpg)
-import qualified Data.ByteString.Lazy as BL
-import Graphics.Rasterific
-import Graphics.Text.TrueType
-import Graphics.Rasterific.Texture
-import Utils.Logging
-import Data.Foldable
+import           Codec.Picture               (PixelRGBA8 (..), decodePng,
+                                              encodePng)
+import           Codec.Picture.Saving        (imageToJpg)
+import qualified Data.ByteString.Lazy        as BL
+import           Data.Foldable
+import           Graphics.Rasterific
+import           Graphics.Rasterific.Texture
+import           Graphics.Text.TrueType
+import           Utils.Logging
 
 blackTexture :: Maybe (Texture PixelRGBA8)
 blackTexture = Just . uniformTexture $ PixelRGBA8 0 0 0 255
@@ -53,8 +54,8 @@ data FontType  = FZHeiTi | MSYaHei
   deriving (Show)
 
 slcColor :: FontColor -> Maybe (Texture PixelRGBA8)
-slcColor FontRed = redTexture
-slcColor FontBlue = blueTexture
+slcColor FontRed   = redTexture
+slcColor FontBlue  = blueTexture
 slcColor FontBlack = blackTexture
 
 slcFont :: FontType -> String

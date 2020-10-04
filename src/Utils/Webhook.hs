@@ -1,9 +1,9 @@
 module Utils.Webhook where
 
-import Control.Lens
-import Network.Wreq
-import Utils.Config
-import Control.Concurrent
+import           Control.Concurrent
+import           Control.Lens
+import           Network.Wreq
+import           Utils.Config
 
 setTelegramWebhook :: Config -> IO ThreadId
 setTelegramWebhook config = forkFinally (get target) (pure $ pure ())

@@ -44,6 +44,9 @@ dependencies:
 - base64-bytestring
 - containers
 - html-entities
+- attoparsec
+- sqlite-simple
+- raw-strings-qq
 
 library:
   source-dirs: src

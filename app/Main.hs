@@ -1,19 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
-import           Control.Lens hiding ((.=))
-import           Web.Scotty                as Scotty
+import           Control.Concurrent        (forkIO)
+import           Control.Exception         (SomeException, try)
+import           Control.Lens              hiding ((.=))
+import           Control.Monad             (forever, void)
+import           Control.Monad.IO.Class    (liftIO)
+import           Core.Data.Unity
+import           Core.Type.Mirai.Update    as MR
+import           Core.Type.Telegram.Update as TG
+import           Data.Aeson                (decode, eitherDecode, pairs, (.:),
+                                            (.=))
+import           Data.Aeson.Types          (parseMaybe)
+import qualified Data.ByteString.Lazy      as BL
+import           Network.HTTP.Types        (status200, status204)
 import qualified Network.WebSockets        as WS
 import           Network.Wreq              as Wreq
-import           Network.HTTP.Types                    (status200, status204)
-import           Control.Monad                         (forever, void)
-import           Control.Monad.IO.Class                (liftIO)
-import           Control.Exception                     (try, SomeException)
-import           Control.Concurrent                    (forkIO)
-import qualified Data.ByteString.Lazy      as BL
-import           Data.Aeson                            (eitherDecode, decode, (.:), pairs, (.=))
-import           Data.Aeson.Types                      (parseMaybe)
-import           Core.Data.Unity
-import           Core.Type.Telegram.Update as TG
-import           Core.Type.Mirai.Update    as MR
+import           Web.Scotty                as Scotty
 --import qualified Data.Text.Lazy as T
 import           Core.Module.Console
 import           Utils.Config
@@ -26,7 +27,7 @@ main = do
     Left err -> logErr "Opening config file" (show err)
     Right c ->
       case eitherDecode c :: Either String Config of
-        Left err -> logErr "Parsing config file" err
+        Left err     -> logErr "Parsing config file" err
         Right config -> runServer config
 
 runServer :: Config -> IO ()
@@ -54,6 +55,7 @@ runServer oriConfig = do
 
   _ <- checkModuleRequirements
   _ <- forkIO (checkModuleEventsIn1Day config)
+  -- _ <- forkIO (checkModuleEventsIn5Mins config)
 
   void $ forkIO (WS.runClient (config ^. ws_host)
                               (config ^. ws_port)

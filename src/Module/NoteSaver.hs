@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.NoteSaver where
 
-import           Core.Type.Unity.Update       as UU
-import           Core.Type.Unity.Request      as UR (SendMsg)
+import           Core.Type.Unity.Request as UR (SendMsg)
+import           Core.Type.Unity.Update  as UU
 
 import           Core.Data.Unity
 import           Utils.Logging
-import           Utils.Misc                              (searchBetweenText)
+import           Utils.Misc              (searchBetweenText)
 
-import           Data.Text                    as Text
-import           Data.Text.IO                 as Text
+import           Data.Text               as Text
+import           Data.Text.IO            as Text
 
 writeNoteFile :: Text -> Text -> IO ()
 writeNoteFile key value = Text.appendFile (Prelude.head noteRqmt) ("`{"<>key<>">`"<>value<>"!^\n")

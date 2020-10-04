@@ -2,16 +2,17 @@
 
 module Core.Data.Telegram where
 
-import Core.Type.Telegram.Update  as TU (Update, Message, message, edited_message)
-import Core.Type.Telegram.Request as TR (SendMsg(SendMsg))
-import Core.Type.Unity.Request    as UR
-import Data.Text                        (pack)
-import Data.Text.Lazy                   (toStrict)
-import Data.Text.Lazy.Builder           (toLazyText)
-import Data.Maybe                       (fromJust, isNothing, isJust)
-import HTMLEntities.Decoder             (htmlEncodedText)
-import Network.Wreq                     (Part, partFile, partText)
-import Control.Lens                     ((^.))
+import           Control.Lens               ((^.))
+import           Core.Type.Telegram.Request as TR (SendMsg (SendMsg))
+import           Core.Type.Telegram.Update  as TU (Message, Update,
+                                                   edited_message, message)
+import           Core.Type.Unity.Request    as UR
+import           Data.Maybe                 (fromJust, isJust, isNothing)
+import           Data.Text                  (pack)
+import           Data.Text.Lazy             (toStrict)
+import           Data.Text.Lazy.Builder     (toLazyText)
+import           HTMLEntities.Decoder       (htmlEncodedText)
+import           Network.Wreq               (Part, partFile, partText)
 
 -- | Get Telegram Message (Message or EditedMessage) from Telegram Update
 getMessageFromUpdate :: TU.Update -> (Int, Maybe Message)
@@ -29,13 +30,14 @@ transMsg msg
       , partText "reply_to_message_id" (pack.show $ msg ^. UR.reply_id)
       , partFile "photo" (fromJust $ ("images/"<>) <$> msg ^. imgPath)]
   | isJust $ msg ^. imgUrl = Right $
-      TR.SendMsg 
+      TR.SendMsg
         (msg ^. UR.chat_id)
-        Nothing 
+        Nothing
         (msg ^. imgUrl)
         (msg ^. UR.text)
         "HTML"
         (msg ^. reply_id)
+        True
   | otherwise = Right $
       TR.SendMsg
         (msg ^. UR.chat_id)
@@ -44,5 +46,6 @@ transMsg msg
         Nothing
         "HTML"
         (msg ^. reply_id)
+        True
   where
     decodeHtml = toStrict.toLazyText.htmlEncodedText

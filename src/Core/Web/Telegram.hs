@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Web.Telegram where
 
-import Network.Wreq
-import Data.Aeson
-import Data.ByteString.Lazy
+import           Data.Aeson
+import           Data.ByteString.Lazy
+import           Network.Wreq
 
-import Prelude hiding (id)
+import           Prelude              hiding (id)
 
 postTgRequest :: String -> String -> Value -> IO (Response ByteString)
 postTgRequest tgbotTk method = post target

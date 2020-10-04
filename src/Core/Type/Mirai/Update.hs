@@ -1,16 +1,17 @@
-{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Core.Type.Mirai.Update where
 
-import Data.Aeson
-import GHC.Generics
-import Utils.Json
+import           Data.Aeson
+import           GHC.Generics
+import           Utils.Json
 
 data Update = Update {
-    mirai_type :: String
-  , mirai_message_id :: Integer
-  , mirai_reply_id :: Maybe Integer
+    mirai_type          :: String
+  , mirai_message_id    :: Integer
+  , mirai_reply_id      :: Maybe Integer
   , mirai_message_chain :: [MRMsg]
-  , mirai_sender :: MRSender
+  , mirai_sender        :: MRSender
 } deriving (Show, Generic)
 instance FromJSON Update where
   parseJSON = withObject "Update" $ \v -> Update
@@ -33,7 +34,7 @@ instance ToJSON MRMsg where
   toJSON = dropToJSON 4
 
 data MRSender = MRSender {
-    mrs_id :: Integer
+    mrs_id       :: Integer
   , mrs_group_id :: Maybe Integer
 } deriving (Eq, Show, Generic)
 instance FromJSON MRSender where

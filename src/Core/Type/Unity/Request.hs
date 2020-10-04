@@ -1,17 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Core.Type.Unity.Request where
 
-import Data.Text
-import Control.Lens
+import           Control.Lens
+import           Data.Text
 
-import Core.Type.Universal
+import           Core.Type.Universal
 
 data SendMsg = SendMsg {
-    _chat_id     :: Integer
-  , _user_id     :: Integer
+    _chat_id     :: String
+  , _user_id     :: String
   , _target_type :: TargetType
   , _target_plat :: Platform
-  , _reply_id    :: Maybe Integer
+  , _reply_id    :: Maybe String
   , _imgUrl      :: Maybe Text
   , _imgPath     :: Maybe String
   , _text        :: Maybe Text

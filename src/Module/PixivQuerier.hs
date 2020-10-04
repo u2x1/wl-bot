@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.PixivQuerier where
 
-import           System.Directory
-import           Core.Type.Unity.Update       as UU
-import           Core.Data.Unity
-import           Core.Type.Unity.Request      as UR
-import           Network.Wreq
-import           Control.Lens
 import           Control.Exception
-import qualified Data.ByteString.Lazy as BL
+import           Control.Lens
+import           Core.Data.Unity
 import           Core.Type.EitherT
+import           Core.Type.Unity.Request as UR
+import           Core.Type.Unity.Update  as UU
+import qualified Data.ByteString.Lazy    as BL
+import           Network.Wreq
+import           System.Directory
 
-import qualified Data.Text                    as Text
+import qualified Data.Text               as Text
 
 packPixivImgUrl :: Text.Text -> String
 packPixivImgUrl = Text.unpack.("https://pixiv.cat/"<>) . (<>".jpg")

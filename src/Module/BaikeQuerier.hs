@@ -1,24 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.BaikeQuerier where
 
-import           Core.Type.Unity.Update       as UU
-import           Core.Type.Unity.Request      as UR (SendMsg)
 import           Core.Data.Unity
+import           Core.Type.Unity.Request     as UR (SendMsg)
+import           Core.Type.Unity.Update      as UU
 
 import           Utils.Logging
-import           Utils.Misc                   as Misc
+import           Utils.Misc                  as Misc
 
-import           Network.Wreq
 import           Control.Lens
-import qualified Data.ByteString.Lazy.UTF8    as UTF8  (toString)
-import qualified Data.ByteString.Lazy         as BL
-import           Data.ByteString.Lazy.Search  as BL    (breakOn, breakAfter)
-import qualified Data.Text                    as Text
-import           Data.Text                             (strip, Text, unpack)
-import           Data.Text.Lazy                        (toStrict)
-import           Data.Text.Lazy.Encoding
-import           Data.List                             (intersperse)
 import           Core.Type.EitherT
+import qualified Data.ByteString.Lazy        as BL
+import           Data.ByteString.Lazy.Search as BL (breakAfter, breakOn)
+import qualified Data.ByteString.Lazy.UTF8   as UTF8 (toString)
+import           Data.List                   (intersperse)
+import           Data.Text                   (Text, strip, unpack)
+import qualified Data.Text                   as Text
+import           Data.Text.Lazy              (toStrict)
+import           Data.Text.Lazy.Encoding
+import           Network.Wreq
 
 getWords :: BL.ByteString -> [Text]
 getWords "" = []

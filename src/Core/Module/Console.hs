@@ -1,33 +1,37 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Module.Console where
 
-import           Data.Text as T           (strip, breakOn, Text, tail, pack)
-import           Data.Foldable            (traverse_)
-import           System.Directory         (doesDirectoryExist, doesFileExist, createDirectory)
-import           Core.Type.Unity.Update   (Update, message_text)
-import           Core.Type.Unity.Request  (SendMsg)
-import           Core.Web.Unity           (sendMsg)
-import           Core.Data.Unity          (makeReqFromUpdate)
-import           Core.Data.MsgLog         (logMsg)
-import           Control.Concurrent       (threadDelay)
-import           Control.Monad            (forever)
-import           Utils.Config             (Config)
---import         Utils.Logging
-import qualified Utils.Misc as Misc       (unlines)
+import           Control.Concurrent      (threadDelay)
+import           Core.Data.MsgLog        (initMsgLogDB, logMsg)
+import           Core.Data.Unity         (makeReqFromUpdate)
+import           Core.Type.Unity.Request (SendMsg)
+import           Core.Type.Unity.Update  (Update, message_text)
+import           Core.Web.Unity          (sendMsg)
+import           Data.Foldable           (traverse_)
+import           Data.Text               as T (Text, breakOn, pack, strip, tail)
+import           System.Directory        (createDirectory, doesDirectoryExist,
+                                          doesFileExist)
+import           Utils.Config            (Config)
+-- import         Utils.Logging
 import           Module.BaikeQuerier
-import           Module.NoteSaver
-import           Module.JavDBSearcher
 import           Module.DiceHelper
---import           Module.BilibiliHelper
+import           Module.JavDBSearcher
+import           Module.NoteSaver
+import qualified Utils.Misc              as Misc (unlines)
+-- import           Module.BilibiliHelper
 import           Module.SolidotFetcher
-import           Module.YandeFetcher
-import           Module.SauceNAOSearcher
-import           Module.TorrentSearcher
-import           Module.PixivQuerier
-import           Module.NHentaiQuerier
-import           Module.WAITSearcher
+-- import           Module.YandeFetcher
 import           Module.Ascii2dSearcher
 import           Module.GetImgUrl
+-- import           Module.HostlocFeed
+import           Module.NHentaiQuerier
+import           Module.PixivQuerier
+import           Module.SauceNAOSearcher
+import           Module.TorrentSearcher
+import           Module.WAITSearcher
+
+import           Control.Exception
+import           Control.Monad
 
 commandProcess :: Update -> Config -> IO ()
 commandProcess update config = do
@@ -39,7 +43,7 @@ getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update =
   case dropWhile (==' ') <$> message_text update of
     Just msgTxt ->
-      if head msgTxt == '/' || head msgTxt == '.' || head msgTxt == '。'
+      if not (null msgTxt) && (head msgTxt == '/' || head msgTxt == '.' || head msgTxt == '。')
          then do
            let command = T.breakOn " " $ T.pack msgTxt
            case getHandler (fst command) of
@@ -48,7 +52,7 @@ getMsgs2Send update =
                if null msgs
                   then case (getCmdHelp (fst command)) of
                          Just help -> pure $ [makeReqFromUpdate update help]
-                         _ -> pure []
+                         _         -> pure []
                   else pure msgs
              _ -> pure []
          else pure []
@@ -58,12 +62,12 @@ getHandler :: Text -> Maybe ((Text, Update) -> IO [SendMsg])
 getHandler cmdHeader = fst <$> lookup (T.tail cmdHeader) commands
 
 getCmdHelp :: Text -> Maybe Text
-getCmdHelp cmdHeader = ((cmdHeader <>) . snd . snd) <$> lookup (T.tail cmdHeader) commands
+getCmdHelp cmdHeader = (cmdHeader <>) . snd . snd <$> lookup (T.tail cmdHeader) commands
 
 checkModuleRequirements :: IO ()
 checkModuleRequirements = do
   let rqmt = mconcat [ sfRqmt
-                     , ydRqmt
+                    --  , hlRqmt
                      , noteRqmt]
       drctRqmt = mconcat [trtDrctRqmt]
   de <- doesDirectoryExist "wldata"
@@ -75,15 +79,24 @@ checkModuleRequirements = do
     fe <- doesDirectoryExist drctName
     if fe then pure () else createDirectory drctName) drctRqmt
 
+  initMsgLogDB
+  -- initHostlocDB
+
 type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
 checkModuleEventsIn1Day :: Config -> IO ()
-checkModuleEventsIn1Day config = forever $ do
-  msgs <- sequence [checkNewOfSolidot, checkYandePopImgs]
+checkModuleEventsIn1Day config = forever . void $ ((try $ do
+  msgs <- sequence [checkNewOfSolidot]
   traverse_ (`sendMsg` config) $ mconcat msgs
-  threadDelay (oneMin*60*6)
+  threadDelay (oneMin*60*6)) :: IO (Either SomeException ()))
+
+-- checkModuleEventsIn5Mins :: Config -> IO ()
+-- checkModuleEventsIn5Mins config = forever . void $ ((try $ do
+--   msgs <- sequence [checkNewOfHostloc]
+--   traverse_ (`sendMsg` config) $ mconcat msgs
+--   threadDelay (oneMin*5)) :: IO (Either SomeException ()))
 
 sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
 sendMsgWithDelay delay config = traverse_ (\x -> sendMsg x config >> threadDelay delay)

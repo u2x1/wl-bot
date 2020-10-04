@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes       #-}
 module Utils.Json where
 
-import Data.Aeson
-import Data.Aeson.Types
-import GHC.Generics
+import           Data.Aeson
+import           Data.Aeson.Types
+import           GHC.Generics
 
 dropToJSON :: forall a.(Generic a, GToJSON Zero (Rep a)) => Int -> a -> Value
 dropToJSON prefix = genericToJSON defaultOptions {

@@ -1,19 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.SauceNAOSearcher where
 
-import           Network.Wreq as Wreq
-import           Control.Lens
-import           Data.Text                    (pack, Text)
-import qualified Data.Text               as T
-import           Data.Aeson
-import           Control.Monad
 import           Control.Exception
-import           Core.Type.Unity.Update  as UU
-import           Core.Type.Unity.Request as UR
-import           Utils.Misc as Misc
+import           Control.Lens
+import           Control.Monad
 import           Core.Data.Unity
 import           Core.Type.EitherT
+import           Core.Type.Unity.Request as UR
+import           Core.Type.Unity.Update  as UU
+import           Data.Aeson
 import           Data.Maybe
+import           Data.Text               (Text, pack)
+import qualified Data.Text               as T
+import           Network.Wreq            as Wreq
+import           Utils.Misc              as Misc
 import           Utils.ModuleHelper
 
 import           Module.NHentaiQuerier
@@ -39,8 +39,8 @@ processSnaoQuery :: (T.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) =
   fmap (getTextT' update) $
     runMEitherT $ do
-      imgUrl' <- liftMaybe "无效图片。" $ pure $ head <$> message_image_urls update
-      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" imgUrl'
+      imgUrl'' <- liftList "无效图片。" $ pure $ message_image_urls update
+      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" (head imgUrl'')
       sendMsgs <- lift $ traverse (getText update) (sr_results result)
       pure $ catMaybes sendMsgs
 
@@ -61,29 +61,29 @@ getInfo sRst = do
       pixiv_mem  = sr_pixiv_member sRst
       pixiv_id  = sr_pixiv_id sRst
 
-  
+
   (doujinshi_name, link) <- do
     let dn = sr_doujinshi_name sRst
     n <- join <$> traverse getNHentaiBookId dn
     let nhentaiLink = ("https://nhentai.net/g/" <>) . snd <$> n
     pure (fst <$> n, nhentaiLink)
 
-  pure . catMaybes $ [Just "# SauceNAO"] 
-                  <> mkInfo "相似度" similarity
-                  <> mkInfo "图源"   source
-                  <> mkInfo "域名"   siteDomain
-                  <> mkInfo "标题"   title
-                  <> mkInfo "画师"   pixiv_mem
-                  <> mkInfo "PixivID"   pixiv_id
-                  <> mkInfo "本子"   doujinshi_name
-                  <> mkInfo "链接"   link
+  pure . catMaybes $ [Just "# SauceNAO"]
+                  <> mkInfo "相似度"    similarity
+                  <> mkInfo "图源"      source
+                  <> mkInfo "域名"      siteDomain
+                  <> mkInfo "标题"      title
+                  <> mkInfo "画师"      pixiv_mem
+                  <> mkInfo "PixivID"  (T.pack . show <$> pixiv_id)
+                  <> mkInfo "本子"      doujinshi_name
+                  <> mkInfo "链接"      link
   where mkInfo key value = (:[]) $ (("[" <> key <> "] ") <>) <$> value
 
 data SnaoResults = SnaoResults {
     sh_short_remaining :: Int
-  , sh_long_remaining :: Int
-  , sh_status :: Int
-  , sr_results :: [SnaoResult]
+  , sh_long_remaining  :: Int
+  , sh_status          :: Int
+  , sr_results         :: [SnaoResult]
 } deriving (Show)
 instance FromJSON SnaoResults where
   parseJSON = withObject "SnaoResults" $ \v -> SnaoResults
@@ -93,13 +93,13 @@ instance FromJSON SnaoResults where
         <*> (v .: "results")
 
 data SnaoResult = SnaoResult {
-    sr_similarity      :: T.Text
-  , sr_thumbnail       :: T.Text
-  , sr_ext_url         :: Maybe [T.Text]
-  , sr_title           :: Maybe T.Text
-  , sr_doujinshi_name  :: Maybe T.Text
-  , sr_pixiv_member    :: Maybe T.Text
-  , sr_pixiv_id    :: Maybe T.Text
+    sr_similarity     :: T.Text
+  , sr_thumbnail      :: T.Text
+  , sr_ext_url        :: Maybe [T.Text]
+  , sr_title          :: Maybe T.Text
+  , sr_doujinshi_name :: Maybe T.Text
+  , sr_pixiv_member   :: Maybe T.Text
+  , sr_pixiv_id       :: Maybe Integer
 } deriving (Show)
 instance FromJSON SnaoResult where
   parseJSON = withObject "SnaoResult" $ \v -> SnaoResult
