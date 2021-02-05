@@ -5,33 +5,33 @@ import           Control.Exception
 import           Control.Lens
 import           Core.Data.Unity
 import           Core.Type.EitherT
-import           Core.Type.Unity.Request as UR
-import           Core.Type.Unity.Update  as UU
-import qualified Data.ByteString.Lazy    as BL
+import           Core.Type.Unity.Request       as UR
+import           Core.Type.Unity.Update        as UU
+import qualified Data.ByteString.Lazy          as BL
 import           Network.Wreq
 import           System.Directory
 
-import qualified Data.Text               as Text
+import qualified Data.Text                     as Text
 
 packPixivImgUrl :: Text.Text -> String
-packPixivImgUrl = Text.unpack.("https://pixiv.cat/"<>) . (<>".jpg")
+packPixivImgUrl = Text.unpack . ("https://pixiv.cat/" <>) . (<> ".jpg")
 
 processPixivQuery :: (Text.Text, Update) -> IO [SendMsg]
 processPixivQuery (cmdBody, update) = do
   x' <- runMEitherT $ do
-         rsp <- liftEither getErrHint $ try (get $ packPixivImgUrl cmdBody)
-         let imgCachePath = "images/Pixiv-" <> Text.unpack cmdBody <> ".jpg"
-         exist <- lift (doesFileExist imgCachePath)
-         if not exist
-            then lift $ BL.writeFile imgCachePath $ rsp ^. responseBody
-            else lift $ pure ()
-         pure $ Text.pack $ drop 7 imgCachePath
+    rsp <- liftEither getErrHint $ try (get $ packPixivImgUrl cmdBody)
+    let imgCachePath = "images/Pixiv-" <> Text.unpack cmdBody <> ".jpg"
+    exist <- lift (doesFileExist imgCachePath)
+    if not exist
+      then lift $ BL.writeFile imgCachePath $ rsp ^. responseBody
+      else lift $ pure ()
+    pure $ Text.pack $ drop 7 imgCachePath
   let x = getTextT x'
 
   -- Check if error occur
   if snd (Text.breakOn "jpg" x) == ""
-     then pure [makeReqFromUpdate update x]
-     else pure [makeReqFromUpdate'' update (Text.unpack x) ""]
+    then pure [makeReqFromUpdate update x]
+    else pure [makeReqFromUpdate'' update (Text.unpack x) ""]
 
 getErrHint :: SomeException -> Text.Text
 getErrHint err

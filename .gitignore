@@ -6,3 +6,4 @@ test/serverTests.sh
 wldata/
 fonts/
 wlMsg.log
+wldata.db

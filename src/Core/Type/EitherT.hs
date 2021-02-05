@@ -4,7 +4,7 @@ module Core.Type.EitherT where
 import           Core.Data.Unity
 import           Core.Type.Unity.Request
 import           Core.Type.Unity.Update
-import           Data.Text               (Text)
+import           Data.Text                      ( Text )
 
 newtype MEitherT a = MEitherT { runMEitherT :: IO (Either Text a) }
 
@@ -12,14 +12,15 @@ instance Functor MEitherT where
   fmap = (<$>)
 
 instance Applicative MEitherT where
-    pure  = MEitherT . pure . Right
-    (<*>) = (<*>)
+  pure  = MEitherT . pure . Right
+  (<*>) = (<*>)
 
 instance Monad MEitherT where
-    x >>= f = MEitherT $ do rx <- runMEitherT x
-                            case rx of
-                              Left err -> return $ Left err
-                              Right a  -> runMEitherT $ f a
+  x >>= f = MEitherT $ do
+    rx <- runMEitherT x
+    case rx of
+      Left  err -> return $ Left err
+      Right a   -> runMEitherT $ f a
 
 lift :: IO a -> MEitherT a
 lift = MEitherT . fmap Right
@@ -42,13 +43,13 @@ liftEither :: (e -> Text) -> IO (Either e a) -> MEitherT a
 liftEither f x = do
   eitherx <- lift x
   case eitherx of
-    Left t       -> MEitherT $ pure $ Left (f t)
+    Left  t      -> MEitherT $ pure $ Left (f t)
     Right rightx -> pure rightx
 
 getTextT :: Either Text Text -> Text
 getTextT (Right x) = x
-getTextT (Left x)  = x
+getTextT (Left  x) = x
 
-getTextT' :: Update -> Either Text [SendMsg]  -> [SendMsg]
+getTextT' :: Update -> Either Text [SendMsg] -> [SendMsg]
 getTextT' _      (Right x) = x
-getTextT' update (Left x)  = [makeReqFromUpdate update x]
+getTextT' update (Left  x) = [makeReqFromUpdate update x]

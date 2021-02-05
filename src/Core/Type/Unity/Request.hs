@@ -6,8 +6,8 @@ import           Data.Text
 
 import           Core.Type.Universal
 
-data SendMsg = SendMsg {
-    _chat_id     :: String
+data SendMsg = SendMsg
+  { _chat_id     :: String
   , _user_id     :: String
   , _target_type :: TargetType
   , _target_plat :: Platform
@@ -15,5 +15,6 @@ data SendMsg = SendMsg {
   , _imgUrl      :: Maybe Text
   , _imgPath     :: Maybe String
   , _text        :: Maybe Text
-} deriving (Show)
+  }
+  deriving Show
 makeLenses ''SendMsg

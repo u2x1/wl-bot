@@ -6,48 +6,61 @@ import           Control.Lens
 import           Control.Monad
 import           Core.Data.Unity
 import           Core.Type.EitherT
-import           Core.Type.Unity.Request as UR
-import           Core.Type.Unity.Update  as UU
+import           Core.Type.Unity.Request       as UR
+import           Core.Type.Unity.Update        as UU
 import           Data.Aeson
 import           Data.Maybe
-import           Data.Text               (Text, pack)
-import qualified Data.Text               as T
-import           Network.Wreq            as Wreq
-import           Utils.Misc              as Misc
+import           Data.Text                      ( Text
+                                                , pack
+                                                )
+import qualified Data.Text                     as T
+import           Network.Wreq                  as Wreq
+import           Utils.Misc                    as Misc
 import           Utils.ModuleHelper
 
 import           Module.NHentaiQuerier
 
 runSauceNAOSearch :: String -> String -> IO (Either T.Text SnaoResults)
 runSauceNAOSearch apiKey imgUrl' = runMEitherT $ do
-  r <- liftEither getErrHint $ try $ Wreq.getWith opts "https://saucenao.com/search.php"
-  liftEither (pack.("解析JSON错误: "<>)) (pure $ eitherDecode $ r ^. responseBody)
-  where opts = defaults & param "db" .~ ["999"]
-                        & param "output_type" .~ ["2"]
-                        & param "numres" .~ ["1"]
-                        & param "api_key" .~ [T.pack apiKey]
-                        & param "url" .~ [T.pack imgUrl']
+  r <- liftEither getErrHint $ try $ Wreq.getWith
+    opts
+    "https://saucenao.com/search.php"
+  liftEither (pack . ("解析JSON错误: " <>))
+             (pure $ eitherDecode $ r ^. responseBody)
+ where
+  opts =
+    defaults
+      &  param "db"
+      .~ ["999"]
+      &  param "output_type"
+      .~ ["2"]
+      &  param "numres"
+      .~ ["1"]
+      &  param "api_key"
+      .~ [T.pack apiKey]
+      &  param "url"
+      .~ [T.pack imgUrl']
 
 getErrHint :: SomeException -> Text
-getErrHint excp =
-      if snd (T.breakOn "rate limit" (T.pack $ show excp)) == ""
-         then "请求错误: " <> T.pack (show excp)
-         else "已超出30秒内搜图限制。"
+getErrHint excp = if snd (T.breakOn "rate limit" (T.pack $ show excp)) == ""
+  then "请求错误: " <> T.pack (show excp)
+  else "已超出30秒内搜图限制。"
 
 
 processSnaoQuery :: (T.Text, Update) -> IO [SendMsg]
-processSnaoQuery (_, update) =
-  fmap (getTextT' update) $
-    runMEitherT $ do
-      imgUrl'' <- liftList "无效图片。" $ pure $ message_image_urls update
-      result <- liftEither id $ runSauceNAOSearch "d4c5f40172cb923c73c409538f979482a469d5a7" (head imgUrl'')
-      sendMsgs <- lift $ traverse (getText update) (sr_results result)
-      pure $ catMaybes sendMsgs
+processSnaoQuery (_, update) = fmap (getTextT' update) $ runMEitherT $ do
+  imgUrl'' <- liftList "无效图片。" $ pure $ message_image_urls update
+  result   <- liftEither id $ runSauceNAOSearch
+    "d4c5f40172cb923c73c409538f979482a469d5a7"
+    (head imgUrl'')
+  sendMsgs <- lift $ traverse (getText update) (sr_results result)
+  pure $ catMaybes sendMsgs
 
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst = do
-      infos <- getInfo rst
-      pure . Just $ makeReqFromUpdate' update (sr_thumbnail rst) $ Misc.unlines infos
+  infos <- getInfo rst
+  pure . Just $ makeReqFromUpdate' update (sr_thumbnail rst) $ Misc.unlines
+    infos
 
 getInfo :: SnaoResult -> IO [Text]
 getInfo sRst = do
@@ -56,9 +69,10 @@ getInfo sRst = do
 
   let similarity = pure $ sr_similarity sRst
       source     = if isJust shortenUrl then shortenUrl else originUrl
-      siteDomain = T.takeWhile (/='/') . T.drop 2 . T.dropWhile (/= '/') <$> originUrl
-      title      = sr_title sRst
-      pixiv_mem  = sr_pixiv_member sRst
+      siteDomain =
+        T.takeWhile (/= '/') . T.drop 2 . T.dropWhile (/= '/') <$> originUrl
+      title     = sr_title sRst
+      pixiv_mem = sr_pixiv_member sRst
       pixiv_id  = sr_pixiv_id sRst
 
 
@@ -68,45 +82,51 @@ getInfo sRst = do
     let nhentaiLink = ("https://nhentai.net/g/" <>) . snd <$> n
     pure (fst <$> n, nhentaiLink)
 
-  pure . catMaybes $ [Just "# SauceNAO"]
-                  <> mkInfo "相似度"    similarity
-                  <> mkInfo "图源"      source
-                  <> mkInfo "域名"      siteDomain
-                  <> mkInfo "标题"      title
-                  <> mkInfo "画师"      pixiv_mem
-                  <> mkInfo "PixivID"  (T.pack . show <$> pixiv_id)
-                  <> mkInfo "本子"      doujinshi_name
-                  <> mkInfo "链接"      link
-  where mkInfo key value = (:[]) $ (("[" <> key <> "] ") <>) <$> value
+  pure
+    .  catMaybes
+    $  [Just "# SauceNAO"]
+    <> mkInfo "相似度"     similarity
+    <> mkInfo "图源"      source
+    <> mkInfo "域名"      siteDomain
+    <> mkInfo "标题"      title
+    <> mkInfo "画师"      pixiv_mem
+    <> mkInfo "PixivID" (T.pack . show <$> pixiv_id)
+    <> mkInfo "本子"      doujinshi_name
+    <> mkInfo "链接"      link
+  where mkInfo key value = (: []) $ (("[" <> key <> "] ") <>) <$> value
 
-data SnaoResults = SnaoResults {
-    sh_short_remaining :: Int
+data SnaoResults = SnaoResults
+  { sh_short_remaining :: Int
   , sh_long_remaining  :: Int
   , sh_status          :: Int
   , sr_results         :: [SnaoResult]
-} deriving (Show)
+  }
+  deriving Show
 instance FromJSON SnaoResults where
-  parseJSON = withObject "SnaoResults" $ \v -> SnaoResults
-        <$> ((v .: "header") >>= (.: "short_remaining"))
-        <*> ((v .: "header") >>= (.: "long_remaining"))
-        <*> ((v .: "header") >>= (.: "status"))
-        <*> (v .: "results")
+  parseJSON = withObject "SnaoResults" $ \v ->
+    SnaoResults
+      <$> ((v .: "header") >>= (.: "short_remaining"))
+      <*> ((v .: "header") >>= (.: "long_remaining"))
+      <*> ((v .: "header") >>= (.: "status"))
+      <*> (v .: "results")
 
-data SnaoResult = SnaoResult {
-    sr_similarity     :: T.Text
+data SnaoResult = SnaoResult
+  { sr_similarity     :: T.Text
   , sr_thumbnail      :: T.Text
   , sr_ext_url        :: Maybe [T.Text]
   , sr_title          :: Maybe T.Text
   , sr_doujinshi_name :: Maybe T.Text
   , sr_pixiv_member   :: Maybe T.Text
   , sr_pixiv_id       :: Maybe Integer
-} deriving (Show)
+  }
+  deriving Show
 instance FromJSON SnaoResult where
-  parseJSON = withObject "SnaoResult" $ \v -> SnaoResult
-        <$> ((v .: "header") >>= (.: "similarity"))
-        <*> ((v .: "header") >>= (.: "thumbnail"))
-        <*> ((v .: "data") >>= (.:? "ext_urls"))
-        <*> ((v .: "data") >>= (.:? "title"))
-        <*> ((v .: "data") >>= (.:? "jp_name"))
-        <*> ((v .: "data") >>= (.:? "member_name"))
-        <*> ((v .: "data") >>= (.:? "pixiv_id"))
+  parseJSON = withObject "SnaoResult" $ \v ->
+    SnaoResult
+      <$> ((v .: "header") >>= (.: "similarity"))
+      <*> ((v .: "header") >>= (.: "thumbnail"))
+      <*> ((v .: "data") >>= (.:? "ext_urls"))
+      <*> ((v .: "data") >>= (.:? "title"))
+      <*> ((v .: "data") >>= (.:? "jp_name"))
+      <*> ((v .: "data") >>= (.:? "member_name"))
+      <*> ((v .: "data") >>= (.:? "pixiv_id"))

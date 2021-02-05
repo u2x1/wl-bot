@@ -1,24 +1,24 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Core.Type.Telegram.Request
-  (
-    SendMsg (SendMsg),
+  ( SendMsg(SendMsg)
   ) where
 
 import           Data.Aeson
-import           Data.Text    (Text)
+import           Data.Text                      ( Text )
 import           GHC.Generics
 import           Utils.Json
 
-data SendMsg = SendMsg {
-    send_msg_chat_id                  :: String
+data SendMsg = SendMsg
+  { send_msg_chat_id                  :: String
   , send_msg_text                     :: Maybe Text
   , send_msg_photo                    :: Maybe Text
   , send_msg_caption                  :: Maybe Text
   , send_msg_parse_mode               :: String
   , send_msg_reply_to_message_id      :: Maybe String
   , send_msg_disable_web_page_preview :: Bool
-} deriving (Eq, Show, Generic)
+  }
+  deriving (Eq, Show, Generic)
 
 instance ToJSON SendMsg where
   toJSON = dropToJSON 9

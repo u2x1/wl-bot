@@ -14,12 +14,11 @@ logWT logTag msg = do
   hFlush stdout
 
 transTag :: LogTag -> String
-transTag tag =
-  case tag of
-    Info    -> "Info"
-    Warning -> "Warning"
-    Error   -> "Error"
-    Debug   -> "Debug"
+transTag tag = case tag of
+  Info    -> "Info"
+  Warning -> "Warning"
+  Error   -> "Error"
+  Debug   -> "Debug"
 
 -- | Log errors with action name and details.
 logErr :: String -> String -> IO ()
