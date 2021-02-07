@@ -1,24 +1,54 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Module.SauceNAOSearcher where
 
-import           Control.Exception
-import           Control.Lens
-import           Control.Monad
-import           Core.Data.Unity
-import           Core.Type.EitherT
+import           Control.Exception              ( SomeException
+                                                , try
+                                                )
+import           Control.Lens                   ( (&)
+                                                , (.~)
+                                                , (^.)
+                                                )
+import           Control.Monad                  ( join )
+import           Core.Data.Unity                ( makeReqFromUpdate' )
+import           Core.Type.EitherT              ( MEitherT(runMEitherT)
+                                                , getTextT'
+                                                , lift
+                                                , liftEither
+                                                , liftList
+                                                )
 import           Core.Type.Unity.Request       as UR
+                                                ( SendMsg )
 import           Core.Type.Unity.Update        as UU
-import           Data.Aeson
-import           Data.Maybe
+                                                ( Update(message_image_urls) )
+import           Data.Aeson                     ( (.:)
+                                                , (.:?)
+                                                , FromJSON(parseJSON)
+                                                , eitherDecode
+                                                , withObject
+                                                )
+import           Data.Either                    ( fromRight )
+import           Data.Maybe                     ( catMaybes
+                                                , isJust
+                                                )
 import           Data.Text                      ( Text
                                                 , pack
                                                 )
 import qualified Data.Text                     as T
+import           Data.Text.Read                 ( decimal )
+import           Module.Ascii2dSearcher         (processAscii2dSearch)
+import           Module.NHentaiQuerier          ( getNHentaiBookId )
 import           Network.Wreq                  as Wreq
+                                                ( defaults
+                                                , getWith
+                                                , param
+                                                , responseBody
+                                                )
+-- import Utils.ModuleHelper ( getShortUrl )
+import           Utils.Logging                  ( LogTag(Info)
+                                                , logWT
+                                                )
 import           Utils.Misc                    as Misc
-import           Utils.ModuleHelper
-
-import           Module.NHentaiQuerier
+                                                ( unlines )
 
 runSauceNAOSearch :: String -> String -> IO (Either T.Text SnaoResults)
 runSauceNAOSearch apiKey imgUrl' = runMEitherT $ do
@@ -50,11 +80,19 @@ getErrHint excp = if snd (T.breakOn "rate limit" (T.pack $ show excp)) == ""
 processSnaoQuery :: (T.Text, Update) -> IO [SendMsg]
 processSnaoQuery (_, update) = fmap (getTextT' update) $ runMEitherT $ do
   imgUrl'' <- liftList "无效图片。" $ pure $ message_image_urls update
-  result   <- liftEither id $ runSauceNAOSearch
+  lift $ logWT Info $ "SauceNAO" <> show imgUrl''
+  result <- liftEither id $ runSauceNAOSearch
     "d4c5f40172cb923c73c409538f979482a469d5a7"
     (head imgUrl'')
   sendMsgs <- lift $ traverse (getText update) (sr_results result)
-  pure $ catMaybes sendMsgs
+
+  let highestSimilarity =
+        fromRight 0 $ fst <$> decimal (sr_similarity (head $ sr_results result)) :: Int
+  urlMsgs <- if highestSimilarity > 70
+    then pure []
+    else lift $ processAscii2dSearch (T.empty, update)
+
+  pure $ urlMsgs <> catMaybes sendMsgs
 
 getText :: Update -> SnaoResult -> IO (Maybe SendMsg)
 getText update rst = do
@@ -65,10 +103,11 @@ getText update rst = do
 getInfo :: SnaoResult -> IO [Text]
 getInfo sRst = do
   let originUrl = head <$> sr_ext_url sRst
-  shortenUrl <- join <$> traverse getShortUrl originUrl
+  -- shortenUrl <- join <$> traverse getShortUrl originUrl
 
   let similarity = pure $ sr_similarity sRst
-      source     = if isJust shortenUrl then shortenUrl else originUrl
+      -- source     = if isJust shortenUrl then shortenUrl else originUrl
+      source     = originUrl
       siteDomain =
         T.takeWhile (/= '/') . T.drop 2 . T.dropWhile (/= '/') <$> originUrl
       title     = sr_title sRst
@@ -85,14 +124,13 @@ getInfo sRst = do
   pure
     .  catMaybes
     $  [Just "# SauceNAO"]
-    <> mkInfo "相似度"     similarity
-    <> mkInfo "图源"      source
-    <> mkInfo "域名"      siteDomain
-    <> mkInfo "标题"      title
-    <> mkInfo "画师"      pixiv_mem
-    <> mkInfo "PixivID" (T.pack . show <$> pixiv_id)
-    <> mkInfo "本子"      doujinshi_name
-    <> mkInfo "链接"      link
+    <> mkInfo "相似度" similarity
+    <> mkInfo "图源"  source
+    <> mkInfo "域名"  siteDomain
+    <> mkInfo "标题"  title
+    <> mkInfo "画师"  pixiv_mem
+    <> mkInfo "本子"  doujinshi_name
+    <> mkInfo "链接"  link
   where mkInfo key value = (: []) $ (("[" <> key <> "] ") <>) <$> value
 
 data SnaoResults = SnaoResults

@@ -1,34 +1,49 @@
-{-# LANGUAGE DeriveGeneric     #-}
+-- {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Utils.ModuleHelper where
 
-import           Control.Lens
-import           Data.Aeson
-import           Data.List
-import           Data.Maybe
+import           Control.Lens                   ( (^.) )
+import           Data.Aeson                     ( FromJSON
+                                                , decode
+                                                )
+import           Data.List                      ( intersperse )
+import           Data.Maybe                     ( catMaybes )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
-import           GHC.Generics
+import           GHC.Generics                   ( Generic )
 import           Network.Wreq                  as Wreq
+                                                ( FormParam((:=))
+                                                , post
+                                                , responseBody
+                                                )
 
-import           Core.Data.Unity
+import           Core.Data.Unity                ( makeReqFromUpdate )
 import           Core.Type.Unity.Request       as UR
+                                                ( SendMsg(SendMsg) )
 import           Core.Type.Unity.Update        as UU
-import           Core.Type.Universal
+                                                ( Update
+                                                  ( chat_id
+                                                  , message_type
+                                                  , platform
+                                                  )
+                                                )
+import           Core.Type.Universal            ( Platform(QQ, Telegram)
+                                                , TargetType(Group, Private)
+                                                )
 
 
 
-getShortUrl :: Text -> IO (Maybe Text)
-getShortUrl originUrl = do
-  rsp <- Wreq.post "https://29.pm/api.php" ["d" := originUrl]
-  let s = decode (rsp ^. responseBody) :: Maybe ShortURL
-  return (shorturl <$> s)
+-- getShortUrl :: Text -> IO (Maybe Text)
+-- getShortUrl originUrl = do
+--   rsp <- Wreq.post "https://29.pm/api.php" ["d" := originUrl]
+--   let s = decode (rsp ^. responseBody) :: Maybe ShortURL
+--   return (shorturl <$> s)
 
-newtype ShortURL = ShortURL {
-   shorturl :: Text
-} deriving (Generic, Show)
-instance FromJSON ShortURL
+-- newtype ShortURL = ShortURL {
+--    shorturl :: Text
+-- } deriving (Generic, Show)
+-- instance FromJSON ShortURL
 
 rmSubscribe :: String -> FilePath -> (T.Text, Update) -> IO [SendMsg]
 rmSubscribe plat fp (_, update) = do

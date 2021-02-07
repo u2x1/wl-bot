@@ -35,7 +35,8 @@ fromUpdate update = UR.SendMsg (show $ UU.chat_id update)
                                (show $ UU.user_id update)
                                (getMsgTp $ UU.message_type update)
                                (getPlat $ UU.platform update)
-                               (Just $ show $ UU.message_id update)
+                              --  (Just $ show $ UU.message_id update)
+                               Nothing -- Temporarily disable replying
 
 getPlat :: (Eq a, Num a) => a -> Platform
 getPlat 0 = Telegram
