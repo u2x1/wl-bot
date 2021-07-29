@@ -1,5 +1,7 @@
 # wl-bot
 
+(It's currently outdated and unavailable because of Mirai's rapid iteration)
+
 This is a program used to provide tools for QQ and Telegram groups, written in Haskell for study purpose.
 
 ## NOTE
@@ -50,7 +52,7 @@ Get all commands using `/help`.
 |---------------------|--------------------------------------|--------------------------|
 | port                | The port this program listen         | 8443                     |
 | webhook\_server     | Server address used for Webhook      | "https://yourserver/"    |
-| mirai\_server       | CoolQ server address for API calling | "http://localhost:5700/" |
+| mirai\_server       | Mirai server address for API calling | "http://localhost:5700/" |
 | tg\_token           | Token for Telegram Bot API           |                          |
 | ws\_host            | Mirai WebSocket listening address    |                          |
 | ws\_port            | Mirai WebSocket listening port       |                          |
