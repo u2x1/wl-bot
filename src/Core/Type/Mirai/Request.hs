@@ -10,7 +10,7 @@ import           Utils.Json
 data SendMRMsg = SendMRMsg
   { mr_qq           :: Maybe String
   , mr_group        :: Maybe String
-  , mr_sessionKey   :: String
+--  , mr_sessionKey   :: String
   , mr_quote        :: Maybe String
   , mr_messageChain :: [Message]
   }
@@ -27,3 +27,12 @@ data Message = Message
   deriving (Eq, Show, Generic)
 instance ToJSON Message where
   toJSON = dropToJSON 4
+
+data MRWSWrapper = MRWSWrapper
+  { syncId     :: Int
+  , command    :: Text
+  , subCommand :: Maybe Text
+  , content    :: SendMRMsg
+  }
+  deriving (Eq, Show, Generic)
+instance ToJSON MRWSWrapper

@@ -9,7 +9,6 @@ import qualified Data.ByteString.Lazy          as BL
 import           Data.Foldable                  ( traverse_ )
 import           Graphics.Rasterific            ( PointSize(PointSize)
                                                 , TextRange(TextRange)
-                                                , Texture
                                                 , V2(V2)
                                                 , printTextRanges
                                                 , renderDrawing
@@ -18,8 +17,8 @@ import           Graphics.Rasterific            ( PointSize(PointSize)
 import           Graphics.Rasterific.Texture    ( Texture
                                                 , uniformTexture
                                                 )
-import           Graphics.Text.TrueType         ( PointSize(PointSize)
-                                                , loadFontFile
+import           Graphics.Text.TrueType         ( 
+                                                 loadFontFile
                                                 )
 import           Utils.Logging                  ( logErr )
 

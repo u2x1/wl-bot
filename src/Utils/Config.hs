@@ -15,9 +15,8 @@ data Config = Config
   , _tg_token          :: String
   , _ws_host           :: String
   , _ws_port           :: Int
-  , _mirai_auth_key    :: String
+  , _mirai_verify_key  :: String
   , _mirai_qq_id       :: String
-  , _mirai_session_key :: String
   }
   deriving Show
 makeLenses ''Config
@@ -30,6 +29,5 @@ instance FromJSON Config where
       <*> (v .: "tg_token")
       <*> (v .: "ws_host")
       <*> (v .: "ws_port")
-      <*> (v .: "mirai_auth_key")
+      <*> (v .: "mirai_verify_key")
       <*> (v .: "mirai_qq_id")
-      <*> pure ""

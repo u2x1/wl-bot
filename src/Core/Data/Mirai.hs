@@ -3,7 +3,10 @@ module Core.Data.Mirai where
 
 import           Control.Lens                   ( (^.) )
 import           Core.Type.Mirai.Request       as MR
-                                                ( Message(Message) )
+                                                ( MRWSWrapper(MRWSWrapper)
+                                                , Message(Message)
+                                                , SendMRMsg
+                                                )
 import           Core.Type.Mirai.Update        as MU
                                                 ( MRMsg
                                                 , mrm_text
@@ -19,10 +22,16 @@ import           Core.Type.Unity.Request       as UR
 import           Data.Maybe                     ( catMaybes
                                                 , fromJust
                                                 )
-import           Data.Text                      ( pack )
+import           Data.Text                      ( Text
+                                                , pack
+                                                )
 import           Data.Text.Lazy                 ( toStrict )
 import           Data.Text.Lazy.Builder         ( toLazyText )
 import           HTMLEntities.Decoder           ( htmlEncodedText )
+
+-- | Wrap SendMRMsg into WebSocket acceptable object
+wrapWS :: Text -> SendMRMsg -> MRWSWrapper
+wrapWS cmd = MRWSWrapper 123 cmd Nothing
 
 -- | Get a list of image urls from Mirai messages.
 getImgUrls :: [MRMsg] -> [String]

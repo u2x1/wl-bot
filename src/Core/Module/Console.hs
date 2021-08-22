@@ -20,7 +20,7 @@ import           Data.Text                     as T
                                                 , tail
                                                 )
 -- import           Module.YandeFetcher
-import           Module.Ascii2dSearcher
+import  Module.Ascii2dSearcher
 -- import         Utils.Logging
 import           Module.BaikeQuerier
 import           Module.DiceHelper
@@ -31,7 +31,6 @@ import           Module.NHentaiQuerier
 import           Module.NoteSaver
 import           Module.PixivQuerier
 import           Module.SauceNAOSearcher
--- import           Module.BilibiliHelper
 import           Module.SolidotFetcher
 import           Module.TorrentSearcher
 import           Module.WAITSearcher
@@ -39,18 +38,18 @@ import           System.Directory               ( createDirectory
                                                 , doesDirectoryExist
                                                 , doesFileExist
                                                 )
-import           Utils.Config                   ( Config )
 import qualified Utils.Misc                    as Misc
                                                 ( unlines )
 
 import           Control.Exception
 import           Control.Monad
+import           Utils.Env
 
-commandProcess :: Update -> Config -> IO ()
-commandProcess update config = do
+commandProcess :: Update -> Env -> IO ()
+commandProcess update env = do
   _    <- logMsg update
   msgs <- getMsgs2Send update
-  traverse_ (`sendMsg` config) msgs
+  traverse_ (`sendMsg` env) msgs
 
 getMsgs2Send :: Update -> IO [SendMsg]
 getMsgs2Send update = case dropWhile (== ' ') <$> message_text update of
@@ -63,8 +62,8 @@ getMsgs2Send update = case dropWhile (== ' ') <$> message_text update of
           Just handler -> do
             msgs <- handler (T.strip $ snd command, update)
             if null msgs
-              then case (getCmdHelp (fst command)) of
-                Just help -> pure $ [makeReqFromUpdate update help]
+              then case getCmdHelp (fst command) of
+                Just help -> pure [makeReqFromUpdate update help]
                 _         -> pure []
               else pure msgs
           _ -> pure []
@@ -82,7 +81,7 @@ checkModuleRequirements :: IO ()
 checkModuleRequirements = do
   let rqmt = mconcat
         [ sfRqmt
-                    --  , hlRqmt
+    --  , hlRqmt
         , noteRqmt
         ]
       drctRqmt = mconcat [trtDrctRqmt]
@@ -108,13 +107,13 @@ type Microsecond = Int
 oneMin :: Microsecond
 oneMin = 60000000
 
-checkModuleEventsIn1Day :: Config -> IO ()
-checkModuleEventsIn1Day config =
+checkModuleEventsIn1Day :: Env -> IO ()
+checkModuleEventsIn1Day env =
   forever
     . void
     $ ((try $ do
          msgs <- sequence [checkNewOfSolidot]
-         traverse_ (`sendMsg` config) $ mconcat msgs
+         traverse_ (`sendMsg` env) $ mconcat msgs
          threadDelay (oneMin * 60 * 6)
        ) :: IO (Either SomeException ())
       )
@@ -125,9 +124,9 @@ checkModuleEventsIn1Day config =
 --   traverse_ (`sendMsg` config) $ mconcat msgs
 --   threadDelay (oneMin*5)) :: IO (Either SomeException ()))
 
-sendMsgWithDelay :: Int -> Config -> [SendMsg] -> IO ()
-sendMsgWithDelay delay config =
-  traverse_ (\x -> sendMsg x config >> threadDelay delay)
+sendMsgWithDelay :: Int -> Env -> [SendMsg] -> IO ()
+sendMsgWithDelay delay env =
+  traverse_ (\x -> sendMsg x env >> threadDelay delay)
 
 -- Module: Help --
 
@@ -157,10 +156,7 @@ commands =
   , ("fh"      , (processJavDBQuery, ("搜番号", " <id>: 从JavDB查询番号")))
   , ("am", (processWAITQuery, ("搜番", " {pic}: 使用图片从trace.moe(WAIT)查询番剧名")))
   , ("pid", (processPixivQuery, ("Pixiv ID", " <pid>: 使用PID从pixiv.cat取得图片")))
-  , ( "trt"
-    , (processTrtQurey, ("搜种子", " <keyword> <index>: 从torrentkitty.tv搜索种子"))
-    )
+  , ( "trt" , (processTrtQurey, ("搜种子", " <query> <index>: 从TorrentKitty搜索种子")))
   , ("qurl", (processImgUrlFetch, ("图片链接", " {pic}: 获取QQ图片的在线链接")))
---  , ("bili"    , (processBiliQuery      , ("哔哩哔哩", " ID: 使用AV号或BV号从哔哩哔哩获取下载链接")))
   , ("help", (getCommandHelps, ("帮助", " <command>: 查看帮助")))
   ]

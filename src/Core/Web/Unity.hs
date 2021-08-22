@@ -16,32 +16,40 @@ import           Network.Wreq
 import           Utils.Config
 import           Utils.Logging
 
-import           Core.Type.Universal
+import           Core.Type.Universal            ( Platform(QQ, Telegram)
+                                                , TargetType
+                                                  ( Group
+                                                  , Private
+                                                  , Temp
+                                                  )
+                                                )
+
+import           Utils.Env
 
 type RB = Response ByteString
 
-sendMsg :: U.SendMsg -> Config -> IO ()
-sendMsg m c = do
-  s <- try (sendMsg' m c) :: IO (Either SomeException RB)
+sendMsg :: U.SendMsg -> Env -> IO ()
+sendMsg m e = do
+  s <- try (sendMsg' m e) :: IO (Either SomeException ())
   case s of
     Right _   -> return ()
     Left  err -> logErr "Sending msg" $ show err
 
-sendMsg' :: U.SendMsg -> Config -> IO RB
-sendMsg' msg config = case msg ^. target_plat of
+sendMsg' :: U.SendMsg -> Env -> IO ()
+sendMsg' msg env = case msg ^. target_plat of
   Telegram -> case T.transMsg msg of
-    Left p -> postTgRequest' (config ^. tg_token) "sendPhoto" p
-    Right s ->
-      postTgRequest
-          (config ^. tg_token)
-          (if isJust $ msg ^. imgUrl then "sendPhoto" else "sendMessage")
-        $ toJSON s
+    Left  p -> () <$ postTgRequest' (config ^. tg_token) "sendPhoto" p
+    Right s -> () <$ postTgRequest
+      (config ^. tg_token)
+      (if isJust $ msg ^. imgUrl then "sendPhoto" else "sendMessage")
+      (toJSON s)
   QQ -> case msg ^. target_type of
-    Private -> Q.sendPrivMsg (msg ^. chat_id) (Q.transMsg msg) config
+    Private -> Q.sendPrivMsg (msg ^. chat_id) (Q.transMsg msg) env
     Temp ->
-      Q.sendTempMsg (msg ^. user_id) (msg ^. chat_id) (Q.transMsg msg) config
+      Q.sendTempMsg (msg ^. user_id) (msg ^. chat_id) (Q.transMsg msg) env
     Group ->
-      Q.sendGrpMsg (msg ^. chat_id) (Q.transMsg msg) config (msg ^. reply_id)
+      Q.sendGrpMsg (msg ^. chat_id) (Q.transMsg msg) env (msg ^. reply_id)
+  where config = cfg env
 
 retry3Times :: IO a -> IO a
 retry3Times action = (catch' . catch' . catch') action

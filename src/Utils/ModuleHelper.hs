@@ -1,4 +1,4 @@
--- {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Utils.ModuleHelper where
 
@@ -34,16 +34,16 @@ import           Core.Type.Universal            ( Platform(QQ, Telegram)
 
 
 
--- getShortUrl :: Text -> IO (Maybe Text)
--- getShortUrl originUrl = do
---   rsp <- Wreq.post "https://29.pm/api.php" ["d" := originUrl]
---   let s = decode (rsp ^. responseBody) :: Maybe ShortURL
---   return (shorturl <$> s)
+getShortUrl :: Text -> IO (Maybe Text)
+getShortUrl originUrl = do
+  rsp <- Wreq.post "https://29.pm/api.php" ["d" := originUrl]
+  let s = decode (rsp ^. responseBody) :: Maybe ShortURL
+  return (shorturl <$> s)
 
--- newtype ShortURL = ShortURL {
---    shorturl :: Text
--- } deriving (Generic, Show)
--- instance FromJSON ShortURL
+newtype ShortURL = ShortURL {
+   shorturl :: Text
+} deriving (Generic, Show)
+instance FromJSON ShortURL
 
 rmSubscribe :: String -> FilePath -> (T.Text, Update) -> IO [SendMsg]
 rmSubscribe plat fp (_, update) = do

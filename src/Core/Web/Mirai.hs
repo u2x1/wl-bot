@@ -1,45 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Web.Mirai where
 
-import           Control.Lens
-import           Core.Type.Mirai.Request
-import           Data.Aeson
-import           Data.ByteString.Lazy
-import           Network.Wreq
-import           Utils.Config
+import Core.Data.Mirai ( wrapWS )
+import Core.Type.Mirai.Request ( Message, SendMRMsg(SendMRMsg) )
+import Data.Aeson ( ToJSON(toJSON), Value, encode )
+import qualified Network.WebSockets            as WS
+import Utils.Env ( Env(wsConn) )
 
-sendGrpMsg
-  :: String -> [Message] -> Config -> Maybe String -> IO (Response ByteString)
-sendGrpMsg grpId msgs config replyId = postCqRequest
-  (config ^. mirai_server)
-  "sendGroupMessage"
-  (toJSON
-    (SendMRMsg Nothing (Just grpId) (config ^. mirai_session_key) replyId msgs)
-  )
+sendGrpMsg :: String -> [Message] -> Env -> Maybe String -> IO ()
+sendGrpMsg grpId msgs env replyId =
+  postMiraiRequest (wsConn env) $ toJSON $ wrapWS
+    "sendGroupMessage"
+    (SendMRMsg Nothing (Just grpId) replyId msgs)
 
-sendTempMsg
-  :: String -> String -> [Message] -> Config -> IO (Response ByteString)
-sendTempMsg userId grpId msgs config = postCqRequest
-  (config ^. mirai_server)
-  "sendTempMessage"
-  (toJSON
-    (SendMRMsg (Just userId)
-               (Just grpId)
-               (config ^. mirai_session_key)
-               Nothing
-               msgs
-    )
-  )
 
-sendPrivMsg :: String -> [Message] -> Config -> IO (Response ByteString)
-sendPrivMsg userId msgs config = postCqRequest
-  (config ^. mirai_server)
+sendTempMsg :: String -> String -> [Message] -> Env -> IO ()
+sendTempMsg userId grpId msgs env =
+  postMiraiRequest (wsConn env) $ toJSON $ wrapWS
+    "sendTempMessage"
+    (SendMRMsg (Just userId) (Just grpId) Nothing msgs)
+
+sendPrivMsg :: String -> [Message] -> Env -> IO ()
+sendPrivMsg userId msgs env = postMiraiRequest (wsConn env) $ toJSON $ wrapWS
   "sendFriendMessage"
-  (toJSON
-    (SendMRMsg (Just userId) Nothing (config ^. mirai_session_key) Nothing msgs)
-  )
+  (SendMRMsg (Just userId) Nothing Nothing msgs)
 
-postCqRequest :: String -> String -> Value -> IO (Response ByteString)
-postCqRequest cqSvr method = postWith opts (cqSvr ++ method)
- where
-  opts = defaults & header "Content-Type" .~ ["text/plain; charset=UTF-8"]
+postMiraiRequest :: WS.Connection -> Value -> IO ()
+postMiraiRequest conn value = WS.sendTextData conn (encode value)

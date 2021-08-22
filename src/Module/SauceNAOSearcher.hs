@@ -28,14 +28,13 @@ import           Data.Aeson                     ( (.:)
                                                 )
 import           Data.Either                    ( fromRight )
 import           Data.Maybe                     ( catMaybes
-                                                , isJust
                                                 )
 import           Data.Text                      ( Text
                                                 , pack
                                                 )
 import qualified Data.Text                     as T
 import           Data.Text.Read                 ( decimal )
-import           Module.Ascii2dSearcher         (processAscii2dSearch)
+import           Module.Ascii2dSearcher         ( processAscii2dSearch )
 import           Module.NHentaiQuerier          ( getNHentaiBookId )
 import           Network.Wreq                  as Wreq
                                                 ( defaults
@@ -112,7 +111,7 @@ getInfo sRst = do
         T.takeWhile (/= '/') . T.drop 2 . T.dropWhile (/= '/') <$> originUrl
       title     = sr_title sRst
       pixiv_mem = sr_pixiv_member sRst
-      pixiv_id  = sr_pixiv_id sRst
+      -- pixiv_id  = sr_pixiv_id sRst
 
 
   (doujinshi_name, link) <- do

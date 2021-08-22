@@ -2,9 +2,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Core.Type.Mirai.Update where
 
-import           Data.Aeson
-import           GHC.Generics
-import           Utils.Json
+import Data.Aeson
+    ( ToJSON(toJSON),
+      FromJSON(parseJSON),
+      Object,
+      withObject,
+      (.:),
+      (.:?) )
+import Data.Aeson.Types ( Parser )
+import GHC.Generics ( Generic )
+import Utils.Json ( dropParseJSON, dropToJSON )
 
 data Update = Update
   { mirai_type          :: String
@@ -15,18 +22,20 @@ data Update = Update
   }
   deriving (Show, Generic)
 instance FromJSON Update where
-  parseJSON = withObject "Update" $ \v ->
-    Update
-      <$> (v .: "type")
-      <*> ((v .: "messageChain") >>= (parseJSON . head) >>= (.: "id"))
-      <*> (   (v .: "messageChain")
+  parseJSON = withObject "Update" $ \vori ->
+    let v = (vori .: "data") :: Parser Object
+    in
+      Update
+      <$> (v >>= (.: "type"))
+      <*> (v >>= (.: "messageChain") >>= (parseJSON . head) >>= (.: "id"))
+      <*> (   (v >>= (.: "messageChain"))
           >>= (\m -> if length m < 2
                 then pure Nothing
                 else parseJSON (m !! 1) >>= (.:? "id")
               )
           )
-      <*> (v .: "messageChain")
-      <*> (v .: "sender")
+      <*> (v >>= (.: "messageChain"))
+      <*> (v >>= (.: "sender"))
 
 data MRMsg = MRMsg
   { mrm_type   :: String
